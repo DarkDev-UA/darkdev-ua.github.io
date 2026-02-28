@@ -664,40 +664,38 @@ function convertToNotes(midi, trackIndex, transpose, speedMul, defaultHold) {
 
   segments.sort((a, b) => a.tick - b.tick);
 
-  // Конвертируем в {key, hold, pause}
+  // Конвертируем в новый формат: [key, hold_ms, pause_ms]
   const notes = [];
+  const HOLD_MS = 80; // фиксированное время нажатия в мс
   for (let i = 0; i < segments.length; i++) {
     const cur = segments[i];
     const next = segments[i + 1];
-    const hold = defaultHold;
-    let pause = 0;
+    let pauseSec = 0;
     if (next) {
-      pause = Math.max(0, ticksToSec(next.tick - cur.tick) - hold);
+      pauseSec = Math.max(0, ticksToSec(next.tick - cur.tick) - HOLD_MS / 1000);
     }
-    pause = Math.round(pause * 1000) / 1000;
-    notes.push([cur.key, hold, pause]);
+    // Переводим в миллисекунды и округляем до 10мс
+    const pauseMs = Math.round(pauseSec * 100) * 10;
+    notes.push([cur.key, HOLD_MS, pauseMs]);
   }
 
   return notes;
 }
 
 // =============================================
-//   ГЕНЕРАЦИЯ LUA КОДА
+//   ГЕНЕРАЦИЯ LUA КОДА (новый формат)
 // =============================================
 function generateLua(notes, name, author) {
   const safeStr = s => s.replace(/"/g, '\\"');
-  let lines = [];
-  lines.push(`-- Вставь этот блок в таблицу Songs в скрипте DarkDev | Hub`);
+  // Собираем ноты в одну строку: key,hold,pause|key,hold,pause|...
+  const noteStr = notes.map(([key, hold, pause]) => `${key},${hold},${pause}`).join('|');
+  const lines = [];
+  lines.push(`-- Вставь этот блок в таблицу Songs в DarkDevHub_v4.lua`);
   lines.push(`{`);
   lines.push(`    name = "${safeStr(name || 'My Song')}",`);
   lines.push(`    author = "${safeStr(author || 'Unknown')}",`);
   lines.push(`    icon = "rbxassetid://0",`);
-  lines.push(`    notes = {`);
-  for (const [key, hold, pause] of notes) {
-    const k = key.length === 1 && key === key.toLowerCase() ? key : key;
-    lines.push(`        {"${k}", ${hold}, ${pause}},`);
-  }
-  lines.push(`    }`);
+  lines.push(`    notes = "${noteStr}"`);
   lines.push(`},`);
   return lines.join('\n');
 }
