@@ -319,7 +319,7 @@ function convertToNotes(midi, transpose, speedMul, useNoteLengths, useSustain) {
       let pauseMs = 0;
       if (nxt) {
           const diff = nxt.startMs - cur.startMs;
-          pauseMs = diff < SIMUL_THRESHOLD ? 0 : Math.round(diff / 10) * 10;
+          pauseMs = diff < SIMUL_THRESHOLD ? 0 : Math.round(diff / 1) * 1;
       }
       notes.push({ 
           key: cur.key, 
