@@ -428,6 +428,25 @@ function buildPlaybackEvents(midi, transpose, speedMul) {
   return events;
 }
 
+function playNote(freq, vel, durSec) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const filt = audioCtx.createBiquadFilter();
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  filt.type = 'lowpass'; filt.frequency.value = 4000;
+  const vol = (vel / 127) * 0.3;
+  const now = audioCtx.currentTime;
+  const dur = Math.min(durSec, 1.5);
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(vol, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(vol * 0.4, now + dur * 0.5);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  osc.connect(filt); filt.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(now); osc.stop(now + dur + 0.05);
+  playbackNodes.push(osc);
+}
+
 function startPlayback(events) {
   ensureAudioCtx();
   stopPlayback();
@@ -435,39 +454,45 @@ function startPlayback(events) {
   isPlaying = true;
   playBtn.textContent = '■ Stop';
   playBtn.classList.add('stop');
-  playbackStart = audioCtx.currentTime + 0.05;
-  playbackDuration = events[events.length-1].startSec + events[events.length-1].durSec + 0.5;
 
-  for (const ev of events) {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    const filt = audioCtx.createBiquadFilter();
-    osc.type = 'triangle';
-    osc.frequency.value = ev.freq;
-    filt.type = 'lowpass'; filt.frequency.value = 4000;
-    const vol = (ev.vel / 127) * 0.15;
-    const t0 = playbackStart + ev.startSec;
-    const dur = Math.min(ev.durSec, 2.0);
-    gain.gain.setValueAtTime(0, t0);
-    gain.gain.linearRampToValueAtTime(vol, t0 + 0.008);
-    gain.gain.exponentialRampToValueAtTime(vol * 0.3, t0 + dur * 0.4);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    osc.connect(filt); filt.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(t0); osc.stop(t0 + dur + 0.05);
-    playbackNodes.push(osc);
-  }
+  playbackDuration = events[events.length-1].startSec + events[events.length-1].durSec;
+  playbackStart = Date.now();
 
-  const tick = () => {
+  let idx = 0;
+  const scheduleNext = () => {
     if (!isPlaying) return;
-    const elapsed = audioCtx.currentTime - playbackStart;
+    const elapsed = (Date.now() - playbackStart) / 1000;
+    // Играем все ноты которые уже должны были звучать
+    while (idx < events.length && events[idx].startSec <= elapsed + 0.1) {
+      const ev = events[idx];
+      playNote(ev.freq, ev.vel, ev.durSec);
+      idx++;
+    }
+    if (idx >= events.length) {
+      // Всё сыграли — ждём конца последней ноты
+      setTimeout(() => {
+        stopPlayback();
+        previewFill.style.width = '0%';
+        previewTime.textContent = '0:00';
+      }, 1500);
+      return;
+    }
+    animFrame = requestAnimationFrame(scheduleNext);
+  };
+
+  // Прогресс бар отдельно
+  const updateBar = () => {
+    if (!isPlaying) return;
+    const elapsed = (Date.now() - playbackStart) / 1000;
     const prog = Math.min(elapsed / playbackDuration, 1);
     previewFill.style.width = (prog * 100) + '%';
     const s = Math.floor(elapsed);
     previewTime.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
-    if (prog >= 1) { stopPlayback(); previewFill.style.width='0%'; previewTime.textContent='0:00'; return; }
-    animFrame = requestAnimationFrame(tick);
+    if (prog < 1) requestAnimationFrame(updateBar);
   };
-  animFrame = requestAnimationFrame(tick);
+
+  requestAnimationFrame(scheduleNext);
+  requestAnimationFrame(updateBar);
 }
 
 // =============================================
