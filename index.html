@@ -16,7 +16,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { background: var(--bg); color: var(--text); font-family: var(--head); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
   body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(26,90,205,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(26,90,205,0.07) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
-  .container { position: relative; z-index: 1; width: 100%; max-width: 820px; padding: 20px 16px 60px; }
+  .container { position: relative; z-index: 1; width: 100%; max-width: 820px; padding: 20px 16px 0; }
   header { text-align: center; padding: 36px 0 28px; border-bottom: 2px solid var(--border); margin-bottom: 28px; }
   header h1 { font-family: var(--head); font-size: 2.8rem; font-weight: 700; color: var(--white); letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 30px rgba(41,128,255,0.5); }
   header h1 span { color: var(--accent2); }
@@ -170,7 +170,10 @@
     <div class="panel-title">03 // результат</div>
     <div class="result-header">
       <div class="result-stats" id="resultStats"></div>
-      <button class="btn-copy" id="copyBtn">Копировать</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-copy" id="copyBtn">Копировать</button>
+        <button class="btn-copy" id="downloadBtn">Скачать .lua</button>
+      </div>
     </div>
     <div class="code-output" id="codeOutput"></div>
   </div>
@@ -656,6 +659,18 @@ convertBtn.addEventListener('click', () => {
   } catch(err) {
     showStatus('Ошибка: ' + err.message, 'err');
   }
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const text = codeOutput.textContent;
+  if (!text) return;
+  const name = (document.getElementById('songName').value || 'song').replace(/[^a-zA-Z0-9_а-яА-Я]/g, '_');
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name + '.lua';
+  a.click();
+  URL.revokeObjectURL(a.href);
 });
 
 copyBtn.addEventListener('click', () => {
