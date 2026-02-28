@@ -398,6 +398,7 @@ function stopPlayback() {
   isPlaying = false;
   for (const n of playbackNodes) { try { n.stop(); } catch(e){} }
   playbackNodes = [];
+  reverbNode = null; // пересоздаём реверб при следующем Play
   if (animFrame) cancelAnimationFrame(animFrame);
   playBtn.textContent = '▶ Play';
   playBtn.classList.remove('stop');
@@ -428,21 +429,53 @@ function buildPlaybackEvents(midi, transpose, speedMul) {
   return events;
 }
 
+// Реверб — создаём один раз
+let reverbNode = null;
+function getReverb() {
+  if (reverbNode) return reverbNode;
+  const sampleRate = audioCtx.sampleRate;
+  const length = sampleRate * 2.5; // 2.5 сек реверб
+  const impulse = audioCtx.createBuffer(2, length, sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = impulse.getChannelData(ch);
+    for (let i = 0; i < length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5);
+    }
+  }
+  reverbNode = audioCtx.createConvolver();
+  reverbNode.buffer = impulse;
+  reverbNode.connect(audioCtx.destination);
+  return reverbNode;
+}
+
 function playNote(freq, vel, durSec) {
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   const filt = audioCtx.createBiquadFilter();
+  const reverbGain = audioCtx.createGain();
+
   osc.type = 'triangle';
   osc.frequency.value = freq;
-  filt.type = 'lowpass'; filt.frequency.value = 4000;
+  filt.type = 'lowpass'; filt.frequency.value = 3500;
+
   const vol = (vel / 127) * 0.3;
   const now = audioCtx.currentTime;
   const dur = Math.min(durSec, 1.5);
+
   gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(vol, now + 0.01);
-  gain.gain.exponentialRampToValueAtTime(vol * 0.4, now + dur * 0.5);
+  gain.gain.linearRampToValueAtTime(vol, now + 0.012);
+  gain.gain.exponentialRampToValueAtTime(vol * 0.35, now + dur * 0.5);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-  osc.connect(filt); filt.connect(gain); gain.connect(audioCtx.destination);
+
+  // Реверб — тихий, 25% от громкости
+  reverbGain.gain.value = 0.25;
+
+  osc.connect(filt);
+  filt.connect(gain);
+  gain.connect(audioCtx.destination); // прямой звук
+  gain.connect(reverbGain);
+  reverbGain.connect(getReverb()); // эхо
+
   osc.start(now); osc.stop(now + dur + 0.05);
   playbackNodes.push(osc);
 }
