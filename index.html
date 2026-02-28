@@ -221,35 +221,61 @@ function parseMidi(buffer) {
   const tracks = [];
 
   for (let t = 0; t < numTracks; t++) {
-    const trkHeader = readU32(); if (trkHeader !== 0x4D54726B) { pos += readU32(); continue; }
-    const trackEnd = pos + readU32();
+    const trkHeader = readU32();
+    const trackLen = readU32();
+    const trackEnd = pos + trackLen;
+    if (trkHeader !== 0x4D54726B) { pos = trackEnd; continue; }
     const events = [];
     let tick = 0, lastStatus = 0;
 
     while (pos < trackEnd) {
+      // delta time
       tick += readVar();
+      if (pos >= trackEnd) break;
+
       let sb = readU8();
-      if (sb & 0x80) lastStatus = sb; else { pos--; sb = lastStatus; }
+      if (sb & 0x80) {
+        lastStatus = sb;
+      } else {
+        // running status
+        pos--;
+        sb = lastStatus;
+      }
+
       const typ = sb >> 4;
 
       if (typ === 0x9) {
+        if (pos + 2 > trackEnd) { pos = trackEnd; break; }
         const n = readU8(), v = readU8();
         events.push({ tick, type: v > 0 ? 'noteOn' : 'noteOff', note: n, vel: v });
       } else if (typ === 0x8) {
+        if (pos + 2 > trackEnd) { pos = trackEnd; break; }
         const n = readU8(); readU8();
         events.push({ tick, type: 'noteOff', note: n });
       } else if (typ === 0xb) {
+        if (pos + 2 > trackEnd) { pos = trackEnd; break; }
         const ctrl = readU8(), val = readU8();
         if (ctrl === 64) events.push({ tick, type: 'sustain', val });
-      } else if (typ === 0xa || typ === 0xe) { readU8(); readU8(); }
-        else if (typ === 0xc || typ === 0xd) { readU8(); }
-        else if (sb === 0xff) {
-          const mt = readU8(), ml = readVar();
-          if (mt === 0x51 && ml === 3) {
-            const b1=readU8(),b2=readU8(),b3=readU8();
-            events.push({ tick, type: 'tempo', tempo: (b1<<16)|(b2<<8)|b3 });
-          } else pos += ml;
-        } else if (sb === 0xf0 || sb === 0xf7) { pos += readVar(); }
+      } else if (typ === 0xa || typ === 0xe) {
+        if (pos + 2 > trackEnd) { pos = trackEnd; break; }
+        readU8(); readU8();
+      } else if (typ === 0xc || typ === 0xd) {
+        if (pos + 1 > trackEnd) { pos = trackEnd; break; }
+        readU8();
+      } else if (sb === 0xff) {
+        if (pos + 1 > trackEnd) { pos = trackEnd; break; }
+        const mt = readU8(), ml = readVar();
+        if (mt === 0x51 && ml === 3 && pos + 3 <= trackEnd) {
+          const b1=readU8(),b2=readU8(),b3=readU8();
+          events.push({ tick, type: 'tempo', tempo: (b1<<16)|(b2<<8)|b3 });
+        } else { pos = Math.min(pos + ml, trackEnd); }
+      } else if (sb === 0xf0 || sb === 0xf7) {
+        const ml = readVar();
+        pos = Math.min(pos + ml, trackEnd);
+      } else {
+        // Неизвестный байт — пропускаем
+        lastStatus = 0;
+      }
     }
     pos = trackEnd;
     tracks.push(events);
