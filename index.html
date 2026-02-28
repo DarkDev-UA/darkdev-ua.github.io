@@ -178,6 +178,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 14px;
   }
+  .setting-item.hidden { display: none; }
 
   @media (max-width: 500px) {
     .settings-grid { grid-template-columns: 1fr; }
@@ -403,14 +404,7 @@
     <div class="panel-title">02 // настройки</div>
     <div class="settings-grid">
 
-      <div class="setting-item">
-        <label>Трек</label>
-        <select id="trackSelect">
-          <option value="-1">Все треки вместе</option>
-        </select>
-      </div>
-
-      <div class="setting-item">
+<div class="setting-item">
         <label>Название песни</label>
         <input type="text" id="songName" placeholder="My Song" style="background:var(--bg);border:2px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.85rem;padding:8px 10px;width:100%;outline:none;">
       </div>
@@ -436,21 +430,30 @@
         </div>
       </div>
 
-      <div class="setting-item">
-        <label>Длительность ноты (сек)</label>
-        <div class="range-wrap">
-          <input type="range" id="holdTime" min="0.05" max="0.8" step="0.01" value="0.15">
-          <span class="range-val" id="holdVal">0.15s</span>
-        </div>
-      </div>
-
     </div>
   </div>
 
-  <!-- Кнопка -->
+  <!-- Кнопка конвертации -->
   <button class="btn-convert" id="convertBtn" disabled>
     ⚡ Конвертировать в Lua
   </button>
+
+  <!-- Прослушивание -->
+  <div class="panel" id="previewPanel" style="display:none;">
+    <div class="panel-title">02.5 // прослушивание</div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;">
+      <button class="btn-convert" id="playBtn" style="margin:0;padding:10px 24px;width:auto;font-size:0.95rem;letter-spacing:2px;">
+        ▶ Play
+      </button>
+      <div style="flex:1;background:var(--bg);border:2px solid var(--border);height:10px;position:relative;">
+        <div id="previewFill" style="height:100%;width:0%;background:var(--accent2);transition:width 0.1s;"></div>
+      </div>
+      <span id="previewTime" style="font-family:var(--mono);font-size:0.75rem;color:var(--dim);min-width:50px;text-align:right;">0:00</span>
+    </div>
+    <div style="font-family:var(--mono);font-size:0.72rem;color:var(--dim);">
+      Синтезированный звук — приблизительно показывает мелодию
+    </div>
+  </div>
 
   <!-- Статус -->
   <div class="status" id="status"></div>
@@ -708,7 +711,6 @@ let parsedMidi = null;
 const fileInput = document.getElementById('fileInput');
 const dropZone = document.getElementById('dropZone');
 const fileLoaded = document.getElementById('fileLoaded');
-const trackSelect = document.getElementById('trackSelect');
 const convertBtn = document.getElementById('convertBtn');
 const resultPanel = document.getElementById('resultPanel');
 const codeOutput = document.getElementById('codeOutput');
@@ -720,17 +722,12 @@ const transposeSlider = document.getElementById('transpose');
 const transposeVal = document.getElementById('transposeVal');
 const speedSlider = document.getElementById('speed');
 const speedVal = document.getElementById('speedVal');
-const holdSlider = document.getElementById('holdTime');
-const holdVal = document.getElementById('holdVal');
 
 transposeSlider.addEventListener('input', () => {
   transposeVal.textContent = transposeSlider.value;
 });
 speedSlider.addEventListener('input', () => {
   speedVal.textContent = parseFloat(speedSlider.value).toFixed(2) + 'x';
-});
-holdSlider.addEventListener('input', () => {
-  holdVal.textContent = parseFloat(holdSlider.value).toFixed(2) + 's';
 });
 
 function showStatus(msg, type) {
@@ -750,20 +747,9 @@ function loadFile(file) {
       midiData = e.target.result;
       parsedMidi = parseMidi(midiData);
 
-      // Треки
-      trackSelect.innerHTML = '<option value="-1">Все треки вместе</option>';
-      parsedMidi.tracks.forEach((track, i) => {
-        const noteCount = track.filter(e => e.type === 'noteOn').length;
-        if (noteCount > 0) {
-          const opt = document.createElement('option');
-          opt.value = i;
-          opt.textContent = `Трек ${i + 1} (${noteCount} нот)`;
-          trackSelect.appendChild(opt);
-        }
-      });
-
       fileLoaded.textContent = `✓ ${file.name} загружен · ${parsedMidi.numTracks} треков`;
       convertBtn.disabled = false;
+      previewPanel.style.display = 'block';
       showStatus(`MIDI загружен: формат ${parsedMidi.format}, ${parsedMidi.numTracks} треков, ${parsedMidi.ticksPerBeat} ticks/beat`, 'ok');
     } catch (err) {
       showStatus('Ошибка парсинга: ' + err.message, 'err');
@@ -786,10 +772,10 @@ convertBtn.addEventListener('click', () => {
   if (!parsedMidi) return;
 
   try {
-    const trackIndex = parseInt(trackSelect.value);
+    const trackIndex = -1;
     const transpose = parseInt(transposeSlider.value);
     const speed = parseFloat(speedSlider.value);
-    const hold = parseFloat(holdSlider.value);
+    const hold = 0.1;
     const name = document.getElementById('songName').value || 'My Song';
     const author = document.getElementById('songAuthor').value || 'Unknown';
 
@@ -828,6 +814,180 @@ copyBtn.addEventListener('click', () => {
       copyBtn.classList.remove('copied');
     }, 2000);
   });
+});
+
+// =============================================
+//   ПРОСЛУШИВАНИЕ через Web Audio API
+// =============================================
+
+// MIDI нота → частота Hz
+function midiToFreq(note) {
+  return 440 * Math.pow(2, (note - 69) / 12);
+}
+
+// Собираем сырые MIDI события для воспроизведения (с реальными частотами)
+function buildPlaybackEvents(midi, transpose, speedMul) {
+  let tempo = 500000;
+  const tpb = midi.ticksPerBeat;
+
+  function ticksToSec(ticks) {
+    return (ticks / tpb) * (tempo / 1000000) / speedMul;
+  }
+
+  let allEvents = [];
+  for (const track of midi.tracks) {
+    for (const ev of track) allEvents.push(ev);
+  }
+  allEvents.sort((a, b) => a.tick - b.tick);
+
+  // Первый проход — собираем tempo map
+  const tempoMap = [];
+  let curTempo = 500000;
+  for (const ev of allEvents) {
+    if (ev.type === 'tempo') {
+      tempoMap.push({ tick: ev.tick, tempo: ev.tempo });
+      curTempo = ev.tempo;
+    }
+  }
+
+  function tickToAbsSec(tick) {
+    let sec = 0;
+    let lastTick = 0;
+    let lastTempo = 500000;
+    for (const tm of tempoMap) {
+      if (tm.tick >= tick) break;
+      sec += ((Math.min(tm.tick, tick) - lastTick) / tpb) * (lastTempo / 1000000);
+      lastTick = tm.tick;
+      lastTempo = tm.tempo;
+    }
+    sec += ((tick - lastTick) / tpb) * (lastTempo / 1000000);
+    return sec / speedMul;
+  }
+
+  const events = [];
+  const noteOnMap = {};
+
+  for (const ev of allEvents) {
+    if (ev.type === 'noteOn' && ev.vel > 0) {
+      noteOnMap[ev.note] = { tick: ev.tick, vel: ev.vel };
+    } else if (ev.type === 'noteOff' || (ev.type === 'noteOn' && ev.vel === 0)) {
+      if (noteOnMap[ev.note]) {
+        const start = tickToAbsSec(noteOnMap[ev.note].tick);
+        const end = tickToAbsSec(ev.tick);
+        const freq = midiToFreq(ev.note + transpose);
+        if (freq > 20 && freq < 20000 && end > start) {
+          events.push({ start, end, freq, vel: noteOnMap[ev.note].vel });
+        }
+        delete noteOnMap[ev.note];
+      }
+    }
+  }
+
+  // Незакрытые ноты
+  for (const [note, data] of Object.entries(noteOnMap)) {
+    const start = tickToAbsSec(data.tick);
+    const freq = midiToFreq(parseInt(note) + transpose);
+    events.push({ start, end: start + 0.3, freq, vel: data.vel });
+  }
+
+  events.sort((a, b) => a.start - b.start);
+  return events;
+}
+
+let audioCtx = null;
+let isPlaying = false;
+let playbackNodes = [];
+let playbackStart = 0;
+let playbackDuration = 0;
+let animFrame = null;
+let previewEvents = [];
+
+const previewPanel = document.getElementById('previewPanel');
+const playBtn = document.getElementById('playBtn');
+const previewFill = document.getElementById('previewFill');
+const previewTime = document.getElementById('previewTime');
+
+function stopPlayback() {
+  isPlaying = false;
+  for (const n of playbackNodes) {
+    try { n.stop(); } catch(e) {}
+  }
+  playbackNodes = [];
+  if (animFrame) cancelAnimationFrame(animFrame);
+  playBtn.textContent = '▶ Play';
+  playBtn.style.background = 'var(--accent)';
+}
+
+function updateProgress() {
+  if (!isPlaying) return;
+  const elapsed = audioCtx.currentTime - playbackStart;
+  const progress = Math.min(elapsed / playbackDuration, 1);
+  previewFill.style.width = (progress * 100) + '%';
+  const secs = Math.floor(elapsed);
+  previewTime.textContent = Math.floor(secs/60) + ':' + String(secs%60).padStart(2,'0');
+  if (progress >= 1) {
+    stopPlayback();
+    previewFill.style.width = '0%';
+    previewTime.textContent = '0:00';
+    return;
+  }
+  animFrame = requestAnimationFrame(updateProgress);
+}
+
+function startPlayback() {
+  if (!previewEvents.length) return;
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  stopPlayback();
+  isPlaying = true;
+  playBtn.textContent = '■ Stop';
+  playBtn.style.background = 'var(--red)';
+
+  playbackStart = audioCtx.currentTime + 0.05;
+  playbackDuration = previewEvents[previewEvents.length - 1].end + 0.5;
+
+  for (const ev of previewEvents) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+
+    osc.type = 'triangle';
+    osc.frequency.value = ev.freq;
+
+    filter.type = 'lowpass';
+    filter.frequency.value = 3000;
+
+    const vol = (ev.vel / 127) * 0.18;
+    const start = playbackStart + ev.start;
+    const dur = Math.min(ev.end - ev.start, 2.0);
+
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(vol, start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(vol * 0.4, start + dur * 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start(start);
+    osc.stop(start + dur + 0.05);
+    playbackNodes.push(osc);
+  }
+
+  animFrame = requestAnimationFrame(updateProgress);
+}
+
+playBtn.addEventListener('click', () => {
+  if (isPlaying) {
+    stopPlayback();
+  } else {
+    const transpose = parseInt(transposeSlider.value);
+    const speed = parseFloat(speedSlider.value);
+    previewEvents = buildPlaybackEvents(parsedMidi, transpose, speed);
+    startPlayback();
+  }
 });
 </script>
 </body>
