@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DarkDev | MIDI Converter</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0f1e;
+    --panel: #0e1628;
+    --border: #1a3a6e;
+    --accent: #1a5acd;
+    --accent2: #2980ff;
+    --light: #4da3ff;
+    --text: #c8deff;
+    --dim: #5a7aaa;
+    --white: #ffffff;
+    --red: #cc2200;
+    --green: #00cc66;
+    --mono: 'Share Tech Mono', monospace;
+    --head: 'Rajdhani', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--head);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Фоновая сетка */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(26,90,205,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(26,90,205,0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 820px;
+    padding: 20px 16px 60px;
+  }
+
+  /* Заголовок */
+  header {
+    text-align: center;
+    padding: 36px 0 28px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 28px;
+  }
+
+  header h1 {
+    font-family: var(--head);
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 0 30px rgba(41,128,255,0.5);
+  }
+
+  header h1 span { color: var(--accent2); }
+
+  header p {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--dim);
+    margin-top: 8px;
+    letter-spacing: 2px;
+  }
+
+  /* Панели */
+  .panel {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: -2px; left: -2px; right: -2px; bottom: -2px;
+    border: 1px solid rgba(41,128,255,0.1);
+    pointer-events: none;
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--accent2);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Зона загрузки */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent2);
+    background: rgba(41,128,255,0.05);
+  }
+
+  .drop-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .drop-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .drop-zone h3 {
+    font-family: var(--head);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 1px;
+  }
+
+  .drop-zone p {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--dim);
+    margin-top: 6px;
+  }
+
+  .file-loaded {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--green);
+    margin-top: 10px;
+  }
+
+  /* Настройки */
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  @media (max-width: 500px) {
+    .settings-grid { grid-template-columns: 1fr; }
+  }
+
+  .setting-item label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .setting-item select,
+  .setting-item input[type=range],
+  .setting-item input[type=number] {
+    width: 100%;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    padding: 8px 10px;
+    outline: none;
+    appearance: none;
+  }
+
+  .setting-item select:focus,
+  .setting-item input:focus {
+    border-color: var(--accent2);
+  }
+
+  .setting-item select option {
+    background: var(--bg);
+  }
+
+  .range-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .range-wrap input[type=range] {
+    flex: 1;
+    padding: 0;
+    height: 4px;
+    accent-color: var(--accent2);
+    cursor: pointer;
+  }
+
+  .range-val {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--accent2);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* Кнопка конвертировать */
+  .btn-convert {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    border: 2px solid var(--accent2);
+    color: var(--white);
+    font-family: var(--head);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-convert:hover {
+    background: var(--accent2);
+    box-shadow: 0 0 20px rgba(41,128,255,0.4);
+  }
+
+  .btn-convert:active { transform: scale(0.99); }
+
+  .btn-convert:disabled {
+    background: #111827;
+    border-color: var(--border);
+    color: var(--dim);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* Результат */
+  .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .result-stats {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--dim);
+  }
+
+  .result-stats span { color: var(--accent2); }
+
+  .btn-copy {
+    background: var(--bg);
+    border: 2px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .btn-copy:hover {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  .btn-copy.copied {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .code-output {
+    background: #060a12;
+    border: 2px solid var(--border);
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: #7ec8ff;
+    max-height: 380px;
+    overflow-y: auto;
+    white-space: pre;
+    line-height: 1.6;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .code-output::-webkit-scrollbar { width: 4px; }
+  .code-output::-webkit-scrollbar-track { background: transparent; }
+  .code-output::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* Статус */
+  .status {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    padding: 10px 14px;
+    border-left: 3px solid var(--dim);
+    background: rgba(255,255,255,0.02);
+    margin-bottom: 12px;
+    display: none;
+  }
+
+  .status.ok { border-color: var(--green); color: var(--green); }
+  .status.err { border-color: var(--red); color: #ff6655; }
+  .status.info { border-color: var(--accent2); color: var(--light); }
+
+  /* Инфо блок */
+  .info-box {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--dim);
+    line-height: 1.7;
+    padding: 14px;
+    border: 1px solid var(--border);
+    background: rgba(26,90,205,0.04);
+  }
+
+  .info-box b { color: var(--accent2); }
+
+  /* Раскладка клавиш */
+  .key-map {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .key {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    color: var(--text);
+  }
+
+  .key.black-key { color: var(--dim); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Dark<span>Dev</span> | MIDI Converter</h1>
+    <p>// MIDI → LUA · VIRTUAL PIANO ROBLOX</p>
+  </header>
+
+  <!-- Загрузка файла -->
+  <div class="panel">
+    <div class="panel-title">01 // загрузка файла</div>
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".mid,.midi">
+      <span class="drop-icon">🎵</span>
+      <h3>Перетащи MIDI файл сюда</h3>
+      <p>или нажми чтобы выбрать файл (.mid / .midi)</p>
+      <div class="file-loaded" id="fileLoaded"></div>
+    </div>
+  </div>
+
+  <!-- Настройки -->
+  <div class="panel">
+    <div class="panel-title">02 // настройки</div>
+    <div class="settings-grid">
+
+      <div class="setting-item">
+        <label>Трек</label>
+        <select id="trackSelect">
+          <option value="-1">Все треки вместе</option>
+        </select>
+      </div>
+
+      <div class="setting-item">
+        <label>Название песни</label>
+        <input type="text" id="songName" placeholder="My Song" style="background:var(--bg);border:2px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.85rem;padding:8px 10px;width:100%;outline:none;">
+      </div>
+
+      <div class="setting-item">
+        <label>Автор</label>
+        <input type="text" id="songAuthor" placeholder="Author" style="background:var(--bg);border:2px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.85rem;padding:8px 10px;width:100%;outline:none;">
+      </div>
+
+      <div class="setting-item">
+        <label>Транспонирование (полутонов)</label>
+        <div class="range-wrap">
+          <input type="range" id="transpose" min="-12" max="12" value="0">
+          <span class="range-val" id="transposeVal">0</span>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label>Скорость (x)</label>
+        <div class="range-wrap">
+          <input type="range" id="speed" min="0.25" max="3" step="0.05" value="1">
+          <span class="range-val" id="speedVal">1.0x</span>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label>Длительность ноты (сек)</label>
+        <div class="range-wrap">
+          <input type="range" id="holdTime" min="0.05" max="0.8" step="0.01" value="0.15">
+          <span class="range-val" id="holdVal">0.15s</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Кнопка -->
+  <button class="btn-convert" id="convertBtn" disabled>
+    ⚡ Конвертировать в Lua
+  </button>
+
+  <!-- Статус -->
+  <div class="status" id="status"></div>
+
+  <!-- Результат -->
+  <div class="panel" id="resultPanel" style="display:none;">
+    <div class="panel-title">03 // результат</div>
+    <div class="result-header">
+      <div class="result-stats" id="resultStats"></div>
+      <button class="btn-copy" id="copyBtn">Копировать</button>
+    </div>
+    <div class="code-output" id="codeOutput"></div>
+  </div>
+
+  <!-- Инфо -->
+  <div class="panel">
+    <div class="panel-title">// раскладка клавиш</div>
+    <div class="info-box">
+      <b>Белые клавиши:</b>
+      <div class="key-map">
+        <span class="key">1</span><span class="key">3</span><span class="key">4</span><span class="key">6</span><span class="key">8</span><span class="key">9</span>
+        <span class="key">q</span><span class="key">w</span><span class="key">e</span><span class="key">t</span><span class="key">y</span><span class="key">u</span><span class="key">o</span><span class="key">p</span>
+        <span class="key">a</span><span class="key">s</span><span class="key">d</span><span class="key">g</span><span class="key">h</span><span class="key">j</span><span class="key">l</span>
+        <span class="key">z</span><span class="key">x</span><span class="key">c</span><span class="key">v</span><span class="key">b</span><span class="key">n</span><span class="key">m</span>
+      </div>
+      <br>
+      <b>Чёрные клавиши (Shift):</b>
+      <div class="key-map">
+        <span class="key black-key">2</span><span class="key black-key">5</span><span class="key black-key">7</span>
+        <span class="key black-key">!</span><span class="key black-key">@</span><span class="key black-key">$</span><span class="key black-key">%</span><span class="key black-key">^</span><span class="key black-key">*</span><span class="key black-key">(</span>
+        <span class="key black-key">Q</span><span class="key black-key">W</span><span class="key black-key">E</span><span class="key black-key">T</span><span class="key black-key">Y</span><span class="key black-key">I</span><span class="key black-key">O</span><span class="key black-key">P</span>
+        <span class="key black-key">A</span><span class="key black-key">S</span><span class="key black-key">D</span><span class="key black-key">G</span><span class="key black-key">H</span><span class="key black-key">J</span><span class="key black-key">L</span>
+        <span class="key black-key">Z</span><span class="key black-key">X</span><span class="key black-key">C</span><span class="key black-key">V</span><span class="key black-key">B</span>
+      </div>
+      <br>
+      Ноты вне диапазона пианино автоматически <b>транспонируются</b> на октаву вверх/вниз.
+    </div>
+  </div>
+
+</div>
+
+<script>
+// =============================================
+//   РАСКЛАДКА: MIDI нота → клавиша Virtual Piano
+//   Диапазон: от C2 (MIDI 36) до B6 (MIDI 95)
+// =============================================
+const NOTE_MAP = {
+  // C2 - B2 (MIDI 36-47)
+  36: '1', 37: '2', 38: '3', 39: '5', 40: '4', 41: '6', 42: '7',
+  43: '8', 44: '!', 45: '9', 46: '@', 47: '0',
+  // C3 - B3 (MIDI 48-59)
+  48: 'q', 49: 'Q', 50: 'w', 51: 'W', 52: 'e', 53: 'E',
+  54: 'r', 55: 'T', 56: 't', 57: 'Y', 58: 'y', 59: 'u',
+  // C4 - B4 (MIDI 60-71) — центральная октава
+  60: 'i', 61: 'I', 62: 'o', 63: 'O', 64: 'p', 65: 'P',
+  66: 'a', 67: 'A', 68: 's', 69: 'S', 70: 'd', 71: 'D',
+  // C5 - B5 (MIDI 72-83)
+  72: 'g', 73: 'G', 74: 'h', 75: 'H', 76: 'j', 77: 'J',
+  78: 'k', 79: 'L', 80: 'l', 81: 'Z', 82: 'z', 83: 'x',
+  // C6 - B6 (MIDI 84-95)
+  84: 'X', 85: 'c', 86: 'C', 87: 'v', 88: 'V', 89: 'b',
+  90: 'B', 91: 'n', 92: 'N', 93: 'm', 94: 'u', 95: 'U',
+};
+
+function midiNoteToKey(note, transpose) {
+  let n = note + transpose;
+  // Транспонируем в диапазон если вышли
+  while (n < 36) n += 12;
+  while (n > 95) n -= 12;
+  return NOTE_MAP[n] || null;
+}
+
+// =============================================
+//   ПАРСЕР MIDI
+// =============================================
+function parseMidi(buffer) {
+  const data = new DataView(buffer);
+  let pos = 0;
+
+  function readUint32() { const v = data.getUint32(pos); pos += 4; return v; }
+  function readUint16() { const v = data.getUint16(pos); pos += 2; return v; }
+  function readUint8()  { return data.getUint8(pos++); }
+
+  function readVarLen() {
+    let result = 0, b;
+    do { b = readUint8(); result = (result << 7) | (b & 0x7f); } while (b & 0x80);
+    return result;
+  }
+
+  // Заголовок
+  if (readUint32() !== 0x4D546864) throw new Error('Не MIDI файл');
+  readUint32(); // header length
+  const format = readUint16();
+  const numTracks = readUint16();
+  const ticksPerBeat = readUint16();
+
+  const tracks = [];
+
+  for (let t = 0; t < numTracks; t++) {
+    if (readUint32() !== 0x4D54726B) throw new Error('Плохой трек');
+    const trackLen = readUint32();
+    const trackEnd = pos + trackLen;
+    const events = [];
+    let tick = 0;
+    let lastStatus = 0;
+
+    while (pos < trackEnd) {
+      const delta = readVarLen();
+      tick += delta;
+      let statusByte = readUint8();
+
+      if (statusByte & 0x80) {
+        lastStatus = statusByte;
+      } else {
+        pos--;
+        statusByte = lastStatus;
+      }
+
+      const type = statusByte >> 4;
+      const ch = statusByte & 0x0f;
+
+      if (type === 0x9) {
+        const note = readUint8();
+        const vel = readUint8();
+        events.push({ tick, type: vel > 0 ? 'noteOn' : 'noteOff', note, vel });
+      } else if (type === 0x8) {
+        const note = readUint8();
+        readUint8();
+        events.push({ tick, type: 'noteOff', note });
+      } else if (type === 0xa) { readUint8(); readUint8(); }
+        else if (type === 0xb) { readUint8(); readUint8(); }
+        else if (type === 0xc) { readUint8(); }
+        else if (type === 0xd) { readUint8(); }
+        else if (type === 0xe) { readUint8(); readUint8(); }
+        else if (statusByte === 0xff) {
+          const metaType = readUint8();
+          const metaLen = readVarLen();
+          if (metaType === 0x51 && metaLen === 3) {
+            const b1 = readUint8(), b2 = readUint8(), b3 = readUint8();
+            events.push({ tick, type: 'tempo', tempo: (b1 << 16) | (b2 << 8) | b3 });
+          } else {
+            pos += metaLen;
+          }
+        } else if (statusByte === 0xf0 || statusByte === 0xf7) {
+          const sysLen = readVarLen();
+          pos += sysLen;
+        } else {
+          // пропускаем
+        }
+    }
+    pos = trackEnd;
+    tracks.push(events);
+  }
+
+  return { format, numTracks, ticksPerBeat, tracks };
+}
+
+// =============================================
+//   КОНВЕРТАЦИЯ В НОТЫ
+// =============================================
+function convertToNotes(midi, trackIndex, transpose, speedMul, defaultHold) {
+  let tempo = 500000; // 120 BPM default
+  const tpb = midi.ticksPerBeat;
+
+  function ticksToSec(ticks) {
+    return (ticks / tpb) * (tempo / 1000000) / speedMul;
+  }
+
+  // Собираем события
+  let allEvents = [];
+  const tracksToUse = trackIndex === -1
+    ? midi.tracks
+    : [midi.tracks[trackIndex]].filter(Boolean);
+
+  for (const track of tracksToUse) {
+    for (const ev of track) {
+      if (ev.type === 'tempo') tempo = ev.tempo;
+      allEvents.push(ev);
+    }
+  }
+
+  allEvents.sort((a, b) => a.tick - b.tick);
+
+  // Строим noteOn/noteOff пары
+  const noteOnTicks = {};
+  const segments = []; // { tick, key }
+
+  for (const ev of allEvents) {
+    if (ev.type === 'tempo') { tempo = ev.tempo; continue; }
+    const key = midiNoteToKey(ev.note, transpose);
+    if (!key) continue;
+
+    if (ev.type === 'noteOn') {
+      noteOnTicks[ev.note] = ev.tick;
+    } else if (ev.type === 'noteOff') {
+      if (noteOnTicks[ev.note] !== undefined) {
+        segments.push({ tick: noteOnTicks[ev.note], key });
+        delete noteOnTicks[ev.note];
+      }
+    }
+  }
+
+  // Остатки незакрытых нот
+  for (const [note, tick] of Object.entries(noteOnTicks)) {
+    const key = midiNoteToKey(parseInt(note), transpose);
+    if (key) segments.push({ tick, key });
+  }
+
+  segments.sort((a, b) => a.tick - b.tick);
+
+  // Конвертируем в {key, hold, pause}
+  const notes = [];
+  for (let i = 0; i < segments.length; i++) {
+    const cur = segments[i];
+    const next = segments[i + 1];
+    const hold = defaultHold;
+    let pause = 0;
+    if (next) {
+      pause = Math.max(0, ticksToSec(next.tick - cur.tick) - hold);
+    }
+    pause = Math.round(pause * 1000) / 1000;
+    notes.push([cur.key, hold, pause]);
+  }
+
+  return notes;
+}
+
+// =============================================
+//   ГЕНЕРАЦИЯ LUA КОДА
+// =============================================
+function generateLua(notes, name, author) {
+  const safeStr = s => s.replace(/"/g, '\\"');
+  let lines = [];
+  lines.push(`-- Вставь этот блок в таблицу Songs в скрипте DarkDev | Hub`);
+  lines.push(`{`);
+  lines.push(`    name = "${safeStr(name || 'My Song')}",`);
+  lines.push(`    author = "${safeStr(author || 'Unknown')}",`);
+  lines.push(`    icon = "rbxassetid://0",`);
+  lines.push(`    notes = {`);
+  for (const [key, hold, pause] of notes) {
+    const k = key.length === 1 && key === key.toLowerCase() ? key : key;
+    lines.push(`        {"${k}", ${hold}, ${pause}},`);
+  }
+  lines.push(`    }`);
+  lines.push(`},`);
+  return lines.join('\n');
+}
+
+// =============================================
+//   UI ЛОГИКА
+// =============================================
+let midiData = null;
+let parsedMidi = null;
+
+const fileInput = document.getElementById('fileInput');
+const dropZone = document.getElementById('dropZone');
+const fileLoaded = document.getElementById('fileLoaded');
+const trackSelect = document.getElementById('trackSelect');
+const convertBtn = document.getElementById('convertBtn');
+const resultPanel = document.getElementById('resultPanel');
+const codeOutput = document.getElementById('codeOutput');
+const copyBtn = document.getElementById('copyBtn');
+const status = document.getElementById('status');
+const resultStats = document.getElementById('resultStats');
+
+const transposeSlider = document.getElementById('transpose');
+const transposeVal = document.getElementById('transposeVal');
+const speedSlider = document.getElementById('speed');
+const speedVal = document.getElementById('speedVal');
+const holdSlider = document.getElementById('holdTime');
+const holdVal = document.getElementById('holdVal');
+
+transposeSlider.addEventListener('input', () => {
+  transposeVal.textContent = transposeSlider.value;
+});
+speedSlider.addEventListener('input', () => {
+  speedVal.textContent = parseFloat(speedSlider.value).toFixed(2) + 'x';
+});
+holdSlider.addEventListener('input', () => {
+  holdVal.textContent = parseFloat(holdSlider.value).toFixed(2) + 's';
+});
+
+function showStatus(msg, type) {
+  status.textContent = msg;
+  status.className = 'status ' + type;
+  status.style.display = 'block';
+}
+
+function loadFile(file) {
+  if (!file || !file.name.match(/\.midi?$/i)) {
+    showStatus('Ошибка: нужен файл .mid или .midi', 'err');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      midiData = e.target.result;
+      parsedMidi = parseMidi(midiData);
+
+      // Треки
+      trackSelect.innerHTML = '<option value="-1">Все треки вместе</option>';
+      parsedMidi.tracks.forEach((track, i) => {
+        const noteCount = track.filter(e => e.type === 'noteOn').length;
+        if (noteCount > 0) {
+          const opt = document.createElement('option');
+          opt.value = i;
+          opt.textContent = `Трек ${i + 1} (${noteCount} нот)`;
+          trackSelect.appendChild(opt);
+        }
+      });
+
+      fileLoaded.textContent = `✓ ${file.name} загружен · ${parsedMidi.numTracks} треков`;
+      convertBtn.disabled = false;
+      showStatus(`MIDI загружен: формат ${parsedMidi.format}, ${parsedMidi.numTracks} треков, ${parsedMidi.ticksPerBeat} ticks/beat`, 'ok');
+    } catch (err) {
+      showStatus('Ошибка парсинга: ' + err.message, 'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  loadFile(e.dataTransfer.files[0]);
+});
+
+convertBtn.addEventListener('click', () => {
+  if (!parsedMidi) return;
+
+  try {
+    const trackIndex = parseInt(trackSelect.value);
+    const transpose = parseInt(transposeSlider.value);
+    const speed = parseFloat(speedSlider.value);
+    const hold = parseFloat(holdSlider.value);
+    const name = document.getElementById('songName').value || 'My Song';
+    const author = document.getElementById('songAuthor').value || 'Unknown';
+
+    showStatus('Конвертирую...', 'info');
+
+    const notes = convertToNotes(parsedMidi, trackIndex, transpose, speed, hold);
+
+    if (notes.length === 0) {
+      showStatus('Ноты не найдены. Попробуй другой трек или транспонирование.', 'err');
+      return;
+    }
+
+    const lua = generateLua(notes, name, author);
+    codeOutput.textContent = lua;
+
+    // Считаем время
+    const totalSec = notes.reduce((s, n) => s + n[1] + n[2], 0);
+    const mins = Math.floor(totalSec / 60);
+    const secs = Math.floor(totalSec % 60);
+    resultStats.innerHTML = `Нот: <span>${notes.length}</span> · Длина: <span>${mins}:${String(secs).padStart(2,'0')}</span>`;
+
+    resultPanel.style.display = 'block';
+    resultPanel.scrollIntoView({ behavior: 'smooth' });
+    showStatus(`Готово! ${notes.length} нот сконвертировано.`, 'ok');
+  } catch (err) {
+    showStatus('Ошибка конвертации: ' + err.message, 'err');
+  }
+});
+
+copyBtn.addEventListener('click', () => {
+  navigator.clipboard.writeText(codeOutput.textContent).then(() => {
+    copyBtn.textContent = 'Скопировано!';
+    copyBtn.classList.add('copied');
+    setTimeout(() => {
+      copyBtn.textContent = 'Копировать';
+      copyBtn.classList.remove('copied');
+    }, 2000);
+  });
+});
+</script>
+</body>
+</html>
