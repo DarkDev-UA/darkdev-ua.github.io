@@ -323,7 +323,7 @@ function convertToNotes(midi, transpose, speedMul, useNoteLengths, useSustain) {
       }
       notes.push({ 
           key: cur.key, 
-          hold: Math.round(cur.holdMs / 10) * 10,
+          hold: Math.round(cur.holdMs / 1) * 1,
           pause: pauseMs
       });
   }
