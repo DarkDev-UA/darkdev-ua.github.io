@@ -614,68 +614,72 @@ function parseMidi(buffer) {
 // =============================================
 //   КОНВЕРТАЦИЯ В НОТЫ
 // =============================================
-function convertToNotes(midi, trackIndex, transpose, speedMul, defaultHold) {
-  let tempo = 500000; // 120 BPM default
+function convertToNotes(midi, trackIndex, transpose, speedMul) {
+  let tempo = 500000;
   const tpb = midi.ticksPerBeat;
+  const HOLD_MS = 80;
 
-  function ticksToSec(ticks) {
-    return (ticks / tpb) * (tempo / 1000000) / speedMul;
-  }
-
-  // Собираем события
+  // Строим tempo map для точного перевода ticks -> ms
   let allEvents = [];
-  const tracksToUse = trackIndex === -1
-    ? midi.tracks
-    : [midi.tracks[trackIndex]].filter(Boolean);
-
-  for (const track of tracksToUse) {
-    for (const ev of track) {
-      if (ev.type === 'tempo') tempo = ev.tempo;
-      allEvents.push(ev);
-    }
+  for (const track of midi.tracks) {
+    for (const ev of track) allEvents.push(ev);
   }
-
   allEvents.sort((a, b) => a.tick - b.tick);
 
-  // Строим noteOn/noteOff пары
-  const noteOnTicks = {};
-  const segments = []; // { tick, key }
+  const tempoMap = [{ tick: 0, tempo: 500000 }];
+  for (const ev of allEvents) {
+    if (ev.type === 'tempo') tempoMap.push({ tick: ev.tick, tempo: ev.tempo });
+  }
+
+  function tickToMs(tick) {
+    let ms = 0, lastTick = 0, lastTempo = 500000;
+    for (const tm of tempoMap) {
+      if (tm.tick >= tick) break;
+      ms += ((Math.min(tm.tick, tick) - lastTick) / tpb) * (lastTempo / 1000);
+      lastTick = tm.tick;
+      lastTempo = tm.tempo;
+    }
+    ms += ((tick - lastTick) / tpb) * (lastTempo / 1000);
+    return ms / speedMul;
+  }
+
+  // Собираем noteOn события с временем в ms
+  const noteOnMap = {};
+  const segments = [];
 
   for (const ev of allEvents) {
-    if (ev.type === 'tempo') { tempo = ev.tempo; continue; }
-    const key = midiNoteToKey(ev.note, transpose);
-    if (!key) continue;
-
-    if (ev.type === 'noteOn') {
-      noteOnTicks[ev.note] = ev.tick;
-    } else if (ev.type === 'noteOff') {
-      if (noteOnTicks[ev.note] !== undefined) {
-        segments.push({ tick: noteOnTicks[ev.note], key });
-        delete noteOnTicks[ev.note];
+    if (ev.type === 'noteOn' && ev.vel > 0) {
+      const key = midiNoteToKey(ev.note, transpose);
+      if (key) noteOnMap[ev.note] = { timeMs: tickToMs(ev.tick), key };
+    } else if (ev.type === 'noteOff' || (ev.type === 'noteOn' && ev.vel === 0)) {
+      if (noteOnMap[ev.note]) {
+        segments.push({ timeMs: noteOnMap[ev.note].timeMs, key: noteOnMap[ev.note].key });
+        delete noteOnMap[ev.note];
       }
     }
   }
-
-  // Остатки незакрытых нот
-  for (const [note, tick] of Object.entries(noteOnTicks)) {
-    const key = midiNoteToKey(parseInt(note), transpose);
-    if (key) segments.push({ tick, key });
+  for (const [, data] of Object.entries(noteOnMap)) {
+    segments.push({ timeMs: data.timeMs, key: data.key });
   }
 
-  segments.sort((a, b) => a.tick - b.tick);
+  segments.sort((a, b) => a.timeMs - b.timeMs);
 
-  // Конвертируем в новый формат: [key, hold_ms, pause_ms]
+  // Конвертируем в новый формат [key, hold_ms, pause_ms]
+  // Если две ноты звучат одновременно (разница < 30ms) -> pause = 0
+  const SIMULTANEOUS_THRESHOLD = 30; // ms
   const notes = [];
-  const HOLD_MS = 80; // фиксированное время нажатия в мс
   for (let i = 0; i < segments.length; i++) {
     const cur = segments[i];
     const next = segments[i + 1];
-    let pauseSec = 0;
+    let pauseMs = 0;
     if (next) {
-      pauseSec = Math.max(0, ticksToSec(next.tick - cur.tick) - HOLD_MS / 1000);
+      const diff = next.timeMs - cur.timeMs;
+      if (diff < SIMULTANEOUS_THRESHOLD) {
+        pauseMs = 0; // одновременное нажатие
+      } else {
+        pauseMs = Math.max(0, Math.round((diff - HOLD_MS) / 10) * 10);
+      }
     }
-    // Переводим в миллисекунды и округляем до 10мс
-    const pauseMs = Math.round(pauseSec * 100) * 10;
     notes.push([cur.key, HOLD_MS, pauseMs]);
   }
 
@@ -773,13 +777,12 @@ convertBtn.addEventListener('click', () => {
     const trackIndex = -1;
     const transpose = parseInt(transposeSlider.value);
     const speed = parseFloat(speedSlider.value);
-    const hold = 0.1;
     const name = document.getElementById('songName').value || 'My Song';
     const author = document.getElementById('songAuthor').value || 'Unknown';
 
     showStatus('Конвертирую...', 'info');
 
-    const notes = convertToNotes(parsedMidi, trackIndex, transpose, speed, hold);
+    const notes = convertToNotes(parsedMidi, trackIndex, transpose, speed);
 
     if (notes.length === 0) {
       showStatus('Ноты не найдены. Попробуй другой трек или транспонирование.', 'err');
@@ -790,7 +793,7 @@ convertBtn.addEventListener('click', () => {
     codeOutput.textContent = lua;
 
     // Считаем время
-    const totalSec = notes.reduce((s, n) => s + n[1] + n[2], 0);
+    const totalSec = notes.reduce((s, n) => s + (n[1] + n[2]) / 1000, 0);
     const mins = Math.floor(totalSec / 60);
     const secs = Math.floor(totalSec % 60);
     resultStats.innerHTML = `Нот: <span>${notes.length}</span> · Длина: <span>${mins}:${String(secs).padStart(2,'0')}</span>`;
