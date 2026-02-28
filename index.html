@@ -633,31 +633,19 @@ convertBtn.addEventListener('click', () => {
     const author = document.getElementById('songAuthor').value || 'Unknown';
 
     showStatus('Конвертирую...', 'info');
+    const timeStart = performance.now();
     const notes = convertToNotes(parsedMidi, transpose, speedMul, useNL, useSus);
+    const timeEnd = performance.now();
 
     if (!notes.length) { showStatus('Ноты не найдены. Попробуй изменить транспонирование.', 'err'); return; }
 
     const lua = generateLua(notes, name, author);
     codeOutput.textContent = lua;
 
-    // Считаем реальное время по временной шкале
-    let timeMs = 0;
-    for (const n of notes) {
-      timeMs += n.pause; // pause = время до следующей ноты
-      if (n.pause > 0) timeMs += 0; // уже учтено
-    }
-    // Правильный способ: суммируем только паузы + последний hold
-    let realMs = 0;
-    for (let ni = 0; ni < notes.length; ni++) {
-      if (notes[ni].pause > 0) realMs += notes[ni].hold + notes[ni].pause;
-      else if (ni === notes.length - 1) realMs += notes[ni].hold;
-    }
-    const totalSec = realMs / 1000;
-    const mins = Math.floor(totalSec/60), secs = Math.floor(totalSec%60);
-    resultStats.innerHTML = `Нот: <span>${notes.length}</span> · Длина: <span>${mins}:${String(secs).padStart(2,'0')}</span>`;
+    resultStats.innerHTML = `Нот: <span>${notes.length}</span>`;
     resultPanel.style.display = 'block';
     resultPanel.scrollIntoView({ behavior: 'smooth' });
-    showStatus(`Готово! ${notes.length} нот конвертировано.`, 'ok');
+    showStatus(`Готово! ${notes.length} нот за ${(timeEnd - timeStart).toFixed(1)}мс`, 'ok');
   } catch(err) {
     showStatus('Ошибка: ' + err.message, 'err');
   }
