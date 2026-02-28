@@ -221,7 +221,7 @@ function parseMidi(buffer) {
   const tracks = [];
 
   for (let t = 0; t < numTracks; t++) {
-    if (readU32() !== 0x4D54726B) throw new Error('Плохой трек');
+    const trkHeader = readU32(); if (trkHeader !== 0x4D54726B) { pos += readU32(); continue; }
     const trackEnd = pos + readU32();
     const events = [];
     let tick = 0, lastStatus = 0;
