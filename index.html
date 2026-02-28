@@ -6,414 +6,106 @@
 <title>DarkDev | MIDI Converter</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
-
   :root {
-    --bg: #0a0f1e;
-    --panel: #0e1628;
-    --border: #1a3a6e;
-    --accent: #1a5acd;
-    --accent2: #2980ff;
-    --light: #4da3ff;
-    --text: #c8deff;
-    --dim: #5a7aaa;
-    --white: #ffffff;
-    --red: #cc2200;
-    --green: #00cc66;
-    --mono: 'Share Tech Mono', monospace;
-    --head: 'Rajdhani', sans-serif;
+    --bg: #0a0f1e; --panel: #0e1628; --border: #1a3a6e;
+    --accent: #1a5acd; --accent2: #2980ff; --light: #4da3ff;
+    --text: #c8deff; --dim: #5a7aaa; --white: #fff;
+    --red: #cc2200; --green: #00cc66;
+    --mono: 'Share Tech Mono', monospace; --head: 'Rajdhani', sans-serif;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--head);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  /* Фоновая сетка */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(26,90,205,0.07) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(26,90,205,0.07) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .container {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 820px;
-    padding: 20px 16px 60px;
-  }
-
-  /* Заголовок */
-  header {
-    text-align: center;
-    padding: 36px 0 28px;
-    border-bottom: 2px solid var(--border);
-    margin-bottom: 28px;
-  }
-
-  header h1 {
-    font-family: var(--head);
-    font-size: 2.8rem;
-    font-weight: 700;
-    color: var(--white);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    text-shadow: 0 0 30px rgba(41,128,255,0.5);
-  }
-
+  body { background: var(--bg); color: var(--text); font-family: var(--head); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(26,90,205,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(26,90,205,0.07) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  .container { position: relative; z-index: 1; width: 100%; max-width: 820px; padding: 20px 16px 60px; }
+  header { text-align: center; padding: 36px 0 28px; border-bottom: 2px solid var(--border); margin-bottom: 28px; }
+  header h1 { font-family: var(--head); font-size: 2.8rem; font-weight: 700; color: var(--white); letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 30px rgba(41,128,255,0.5); }
   header h1 span { color: var(--accent2); }
-
-  header p {
-    font-family: var(--mono);
-    font-size: 0.8rem;
-    color: var(--dim);
-    margin-top: 8px;
-    letter-spacing: 2px;
-  }
-
-  /* Панели */
-  .panel {
-    background: var(--panel);
-    border: 2px solid var(--border);
-    padding: 20px;
-    margin-bottom: 16px;
-    position: relative;
-  }
-
-  .panel::before {
-    content: '';
-    position: absolute;
-    top: -2px; left: -2px; right: -2px; bottom: -2px;
-    border: 1px solid rgba(41,128,255,0.1);
-    pointer-events: none;
-  }
-
-  .panel-title {
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    color: var(--accent2);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .panel-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* Зона загрузки */
-  .drop-zone {
-    border: 2px dashed var(--border);
-    padding: 40px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-  }
-
-  .drop-zone:hover, .drop-zone.dragover {
-    border-color: var(--accent2);
-    background: rgba(41,128,255,0.05);
-  }
-
-  .drop-zone input[type=file] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-  }
-
-  .drop-icon {
-    font-size: 2.5rem;
-    margin-bottom: 12px;
-    display: block;
-  }
-
-  .drop-zone h3 {
-    font-family: var(--head);
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--white);
-    letter-spacing: 1px;
-  }
-
-  .drop-zone p {
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    color: var(--dim);
-    margin-top: 6px;
-  }
-
-  .file-loaded {
-    font-family: var(--mono);
-    font-size: 0.8rem;
-    color: var(--green);
-    margin-top: 10px;
-  }
-
-  /* Настройки */
-  .settings-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-  .setting-item.hidden { display: none; }
-
-  @media (max-width: 500px) {
-    .settings-grid { grid-template-columns: 1fr; }
-  }
-
-  .setting-item label {
-    display: block;
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    color: var(--dim);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .setting-item select,
-  .setting-item input[type=range],
-  .setting-item input[type=number] {
-    width: 100%;
-    background: var(--bg);
-    border: 2px solid var(--border);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    padding: 8px 10px;
-    outline: none;
-    appearance: none;
-  }
-
-  .setting-item select:focus,
-  .setting-item input:focus {
-    border-color: var(--accent2);
-  }
-
-  .setting-item select option {
-    background: var(--bg);
-  }
-
-  .range-wrap {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .range-wrap input[type=range] {
-    flex: 1;
-    padding: 0;
-    height: 4px;
-    accent-color: var(--accent2);
-    cursor: pointer;
-  }
-
-  .range-val {
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    color: var(--accent2);
-    min-width: 36px;
-    text-align: right;
-  }
-
-  /* Кнопка конвертировать */
-  .btn-convert {
-    width: 100%;
-    padding: 16px;
-    background: var(--accent);
-    border: 2px solid var(--accent2);
-    color: var(--white);
-    font-family: var(--head);
-    font-size: 1.1rem;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.15s;
-    margin-bottom: 16px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .btn-convert:hover {
-    background: var(--accent2);
-    box-shadow: 0 0 20px rgba(41,128,255,0.4);
-  }
-
-  .btn-convert:active { transform: scale(0.99); }
-
-  .btn-convert:disabled {
-    background: #111827;
-    border-color: var(--border);
-    color: var(--dim);
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
+  header p { font-family: var(--mono); font-size: 0.8rem; color: var(--dim); margin-top: 8px; letter-spacing: 2px; }
+  .panel { background: var(--panel); border: 2px solid var(--border); padding: 20px; margin-bottom: 16px; position: relative; }
+  .panel-title { font-family: var(--mono); font-size: 0.72rem; color: var(--accent2); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .panel-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .drop-zone { border: 2px dashed var(--border); padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+  .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent2); background: rgba(41,128,255,0.05); }
+  .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop-icon { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+  .drop-zone h3 { font-size: 1.1rem; font-weight: 700; color: var(--white); }
+  .drop-zone p { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); margin-top: 6px; }
+  .file-loaded { font-family: var(--mono); font-size: 0.8rem; color: var(--green); margin-top: 10px; }
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 500px) { .settings-grid { grid-template-columns: 1fr; } }
+  .setting-item label { display: block; font-family: var(--mono); font-size: 0.72rem; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .setting-item input[type=text], .setting-item input[type=number] { width: 100%; background: var(--bg); border: 2px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 0.85rem; padding: 8px 10px; outline: none; }
+  .setting-item input:focus { border-color: var(--accent2); }
+  .range-wrap { display: flex; align-items: center; gap: 10px; }
+  .range-wrap input[type=range] { flex: 1; padding: 0; height: 4px; accent-color: var(--accent2); cursor: pointer; }
+  .range-val { font-family: var(--mono); font-size: 0.85rem; color: var(--accent2); min-width: 40px; text-align: right; }
+  /* Чекбоксы */
+  .checks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .check-item { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px 12px; border: 2px solid var(--border); background: var(--bg); transition: border-color 0.15s; }
+  .check-item:hover { border-color: var(--accent2); }
+  .check-item.active { border-color: var(--accent2); background: rgba(41,128,255,0.08); }
+  .check-item input[type=checkbox] { accent-color: var(--accent2); width: 16px; height: 16px; cursor: pointer; }
+  .check-item span { font-family: var(--mono); font-size: 0.78rem; color: var(--text); }
+  .check-item small { display: block; font-family: var(--mono); font-size: 0.65rem; color: var(--dim); margin-top: 2px; }
+  /* Кнопки */
+  .btn-convert { width: 100%; padding: 16px; background: var(--accent); border: 2px solid var(--accent2); color: var(--white); font-family: var(--head); font-size: 1.1rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; margin-bottom: 16px; }
+  .btn-convert:hover { background: var(--accent2); box-shadow: 0 0 20px rgba(41,128,255,0.4); }
+  .btn-convert:disabled { background: #111827; border-color: var(--border); color: var(--dim); cursor: not-allowed; }
+  /* Прослушивание */
+  .preview-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .btn-play { padding: 10px 20px; background: var(--accent); border: 2px solid var(--accent2); color: var(--white); font-family: var(--head); font-size: 1rem; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .btn-play:hover { background: var(--accent2); }
+  .btn-play.stop { background: var(--red); border-color: #ff4422; }
+  .progress-bar { flex: 1; background: var(--bg); border: 2px solid var(--border); height: 12px; position: relative; cursor: pointer; }
+  .progress-fill { height: 100%; background: var(--accent2); width: 0%; transition: width 0.1s; }
+  .time-label { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); min-width: 50px; text-align: right; }
   /* Результат */
-  .result-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-
-  .result-stats {
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    color: var(--dim);
-  }
-
+  .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .result-stats { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); }
   .result-stats span { color: var(--accent2); }
-
-  .btn-copy {
-    background: var(--bg);
-    border: 2px solid var(--border);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-    padding: 6px 14px;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-transform: uppercase;
-  }
-
-  .btn-copy:hover {
-    border-color: var(--accent2);
-    color: var(--accent2);
-  }
-
-  .btn-copy.copied {
-    border-color: var(--green);
-    color: var(--green);
-  }
-
-  .code-output {
-    background: #060a12;
-    border: 2px solid var(--border);
-    padding: 16px;
-    font-family: var(--mono);
-    font-size: 0.78rem;
-    color: #7ec8ff;
-    max-height: 380px;
-    overflow-y: auto;
-    white-space: pre;
-    line-height: 1.6;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-
-  .code-output::-webkit-scrollbar { width: 4px; }
-  .code-output::-webkit-scrollbar-track { background: transparent; }
-  .code-output::-webkit-scrollbar-thumb { background: var(--border); }
-
-  /* Статус */
-  .status {
-    font-family: var(--mono);
-    font-size: 0.78rem;
-    padding: 10px 14px;
-    border-left: 3px solid var(--dim);
-    background: rgba(255,255,255,0.02);
-    margin-bottom: 12px;
-    display: none;
-  }
-
+  .btn-copy { background: var(--bg); border: 2px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 0.75rem; padding: 6px 14px; cursor: pointer; transition: all 0.15s; text-transform: uppercase; }
+  .btn-copy:hover { border-color: var(--accent2); color: var(--accent2); }
+  .btn-copy.copied { border-color: var(--green); color: var(--green); }
+  .code-output { background: #060a12; border: 2px solid var(--border); padding: 16px; font-family: var(--mono); font-size: 0.78rem; color: #7ec8ff; max-height: 380px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.6; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+  .status { font-family: var(--mono); font-size: 0.78rem; padding: 10px 14px; border-left: 3px solid var(--dim); background: rgba(255,255,255,0.02); margin-bottom: 12px; display: none; }
   .status.ok { border-color: var(--green); color: var(--green); }
   .status.err { border-color: var(--red); color: #ff6655; }
   .status.info { border-color: var(--accent2); color: var(--light); }
-
-  /* Инфо блок */
-  .info-box {
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    color: var(--dim);
-    line-height: 1.7;
-    padding: 14px;
-    border: 1px solid var(--border);
-    background: rgba(26,90,205,0.04);
-  }
-
-  .info-box b { color: var(--accent2); }
-
-  /* Раскладка клавиш */
-  .key-map {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 8px;
-  }
-
-  .key {
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    padding: 2px 6px;
-    color: var(--text);
-  }
-
-  .key.black-key { color: var(--dim); }
+  .bpm-row { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+  .bpm-detected { font-family: var(--mono); font-size: 0.8rem; color: var(--accent2); }
 </style>
 </head>
 <body>
 <div class="container">
-
   <header>
     <h1>Dark<span>Dev</span> | MIDI Converter</h1>
     <p>// MIDI → LUA · VIRTUAL PIANO ROBLOX</p>
   </header>
 
-  <!-- Загрузка файла -->
+  <!-- 01 Загрузка -->
   <div class="panel">
     <div class="panel-title">01 // загрузка файла</div>
     <div class="drop-zone" id="dropZone">
       <input type="file" id="fileInput" accept=".mid,.midi">
       <span class="drop-icon">🎵</span>
       <h3>Перетащи MIDI файл сюда</h3>
-      <p>или нажми чтобы выбрать файл (.mid / .midi)</p>
+      <p>или нажми чтобы выбрать (.mid / .midi)</p>
       <div class="file-loaded" id="fileLoaded"></div>
     </div>
   </div>
 
-  <!-- Настройки -->
+  <!-- 02 Настройки -->
   <div class="panel">
     <div class="panel-title">02 // настройки</div>
-    <div class="settings-grid">
-
-<div class="setting-item">
+    <div class="settings-grid" style="margin-bottom:14px;">
+      <div class="setting-item">
         <label>Название песни</label>
-        <input type="text" id="songName" placeholder="My Song" style="background:var(--bg);border:2px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.85rem;padding:8px 10px;width:100%;outline:none;">
+        <input type="text" id="songName" placeholder="My Song">
       </div>
-
       <div class="setting-item">
         <label>Автор</label>
-        <input type="text" id="songAuthor" placeholder="Author" style="background:var(--bg);border:2px solid var(--border);color:var(--text);font-family:var(--mono);font-size:0.85rem;padding:8px 10px;width:100%;outline:none;">
+        <input type="text" id="songAuthor" placeholder="Unknown">
       </div>
-
       <div class="setting-item">
         <label>Транспонирование (полутонов)</label>
         <div class="range-wrap">
@@ -421,39 +113,55 @@
           <span class="range-val" id="transposeVal">0</span>
         </div>
       </div>
-
       <div class="setting-item">
         <label>Скорость (x)</label>
         <div class="range-wrap">
           <input type="range" id="speed" min="0.25" max="3" step="0.05" value="1">
-          <span class="range-val" id="speedVal">1.0x</span>
+          <span class="range-val" id="speedVal">1.00x</span>
         </div>
       </div>
+      <div class="setting-item">
+        <label>BPM <span id="bpmDetected" class="bpm-detected"></span></label>
+        <div class="range-wrap">
+          <input type="number" id="bpmInput" placeholder="авто" min="20" max="300" style="width:100%">
+        </div>
+      </div>
+    </div>
 
+    <!-- Опции -->
+    <div class="checks-grid">
+      <label class="check-item" id="chkNoteLengths">
+        <input type="checkbox" id="useNoteLengths" checked>
+        <div>
+          <span>Длина нот из MIDI</span>
+          <small>Hold = реальная длина ноты</small>
+        </div>
+      </label>
+      <label class="check-item" id="chkDetectBpm">
+        <input type="checkbox" id="detectBpm" checked>
+        <div>
+          <span>Определить BPM</span>
+          <small>Автоматически из MIDI</small>
+        </div>
+      </label>
     </div>
   </div>
-
-  <!-- Кнопка конвертации -->
-  <button class="btn-convert" id="convertBtn" disabled>
-    ⚡ Конвертировать в Lua
-  </button>
 
   <!-- Прослушивание -->
   <div class="panel" id="previewPanel" style="display:none;">
     <div class="panel-title">02.5 // прослушивание</div>
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;">
-      <button class="btn-convert" id="playBtn" style="margin:0;padding:10px 24px;width:auto;font-size:0.95rem;letter-spacing:2px;">
-        ▶ Play
-      </button>
-      <div style="flex:1;background:var(--bg);border:2px solid var(--border);height:10px;position:relative;">
-        <div id="previewFill" style="height:100%;width:0%;background:var(--accent2);transition:width 0.1s;"></div>
+    <div class="preview-row">
+      <button class="btn-play" id="playBtn">▶ Play</button>
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="previewFill"></div>
       </div>
-      <span id="previewTime" style="font-family:var(--mono);font-size:0.75rem;color:var(--dim);min-width:50px;text-align:right;">0:00</span>
+      <span class="time-label" id="previewTime">0:00</span>
     </div>
-    <div style="font-family:var(--mono);font-size:0.72rem;color:var(--dim);">
-      Синтезированный звук — приблизительно показывает мелодию
-    </div>
+    <div style="font-family:var(--mono);font-size:0.72rem;color:var(--dim);">Синтезированный звук — для проверки мелодии</div>
   </div>
+
+  <!-- Кнопка конвертации -->
+  <button class="btn-convert" id="convertBtn" disabled>⚡ Конвертировать в Lua</button>
 
   <!-- Статус -->
   <div class="status" id="status"></div>
@@ -467,63 +175,29 @@
     </div>
     <div class="code-output" id="codeOutput"></div>
   </div>
-
-  <!-- Инфо -->
-  <div class="panel">
-    <div class="panel-title">// раскладка клавиш</div>
-    <div class="info-box">
-      <b>Белые клавиши:</b>
-      <div class="key-map">
-        <span class="key">1</span><span class="key">3</span><span class="key">4</span><span class="key">6</span><span class="key">8</span><span class="key">9</span>
-        <span class="key">q</span><span class="key">w</span><span class="key">e</span><span class="key">t</span><span class="key">y</span><span class="key">u</span><span class="key">o</span><span class="key">p</span>
-        <span class="key">a</span><span class="key">s</span><span class="key">d</span><span class="key">g</span><span class="key">h</span><span class="key">j</span><span class="key">l</span>
-        <span class="key">z</span><span class="key">x</span><span class="key">c</span><span class="key">v</span><span class="key">b</span><span class="key">n</span><span class="key">m</span>
-      </div>
-      <br>
-      <b>Чёрные клавиши (Shift):</b>
-      <div class="key-map">
-        <span class="key black-key">2</span><span class="key black-key">5</span><span class="key black-key">7</span>
-        <span class="key black-key">!</span><span class="key black-key">@</span><span class="key black-key">$</span><span class="key black-key">%</span><span class="key black-key">^</span><span class="key black-key">*</span><span class="key black-key">(</span>
-        <span class="key black-key">Q</span><span class="key black-key">W</span><span class="key black-key">E</span><span class="key black-key">T</span><span class="key black-key">Y</span><span class="key black-key">I</span><span class="key black-key">O</span><span class="key black-key">P</span>
-        <span class="key black-key">A</span><span class="key black-key">S</span><span class="key black-key">D</span><span class="key black-key">G</span><span class="key black-key">H</span><span class="key black-key">J</span><span class="key black-key">L</span>
-        <span class="key black-key">Z</span><span class="key black-key">X</span><span class="key black-key">C</span><span class="key black-key">V</span><span class="key black-key">B</span>
-      </div>
-      <br>
-      Ноты вне диапазона пианино автоматически <b>транспонируются</b> на октаву вверх/вниз.
-    </div>
-  </div>
-
 </div>
 
 <script>
 // =============================================
-//   РАСКЛАДКА: MIDI нота → клавиша Virtual Piano
-//   Диапазон: от C2 (MIDI 36) до B6 (MIDI 95)
+//   РАСКЛАДКА НОТ
 // =============================================
 const NOTE_MAP = {
-  // C2 - B2 (MIDI 36-47)
-  36: '1', 37: '2', 38: '3', 39: '5', 40: '4', 41: '6', 42: '7',
-  43: '8', 44: '!', 45: '9', 46: '@', 47: '0',
-  // C3 - B3 (MIDI 48-59)
-  48: 'q', 49: 'Q', 50: 'w', 51: 'W', 52: 'e', 53: 'E',
-  54: 'r', 55: 'T', 56: 't', 57: 'Y', 58: 'y', 59: 'u',
-  // C4 - B4 (MIDI 60-71) — центральная октава
-  60: 'i', 61: 'I', 62: 'o', 63: 'O', 64: 'p', 65: 'P',
-  66: 'a', 67: 'A', 68: 's', 69: 'S', 70: 'd', 71: 'D',
-  // C5 - B5 (MIDI 72-83)
-  72: 'g', 73: 'G', 74: 'h', 75: 'H', 76: 'j', 77: 'J',
-  78: 'k', 79: 'L', 80: 'l', 81: 'Z', 82: 'z', 83: 'x',
-  // C6 - B6 (MIDI 84-95)
-  84: 'X', 85: 'c', 86: 'C', 87: 'v', 88: 'V', 89: 'b',
-  90: 'B', 91: 'n', 92: 'N', 93: 'm', 94: 'u', 95: 'U',
+  36:'1',37:'2',38:'3',39:'5',40:'4',41:'6',42:'7',43:'8',44:'!',45:'9',46:'@',47:'0',
+  48:'q',49:'Q',50:'w',51:'W',52:'e',53:'E',54:'r',55:'T',56:'t',57:'Y',58:'y',59:'u',
+  60:'i',61:'I',62:'o',63:'O',64:'p',65:'P',66:'a',67:'A',68:'s',69:'S',70:'d',71:'D',
+  72:'g',73:'G',74:'h',75:'H',76:'j',77:'J',78:'k',79:'L',80:'l',81:'Z',82:'z',83:'x',
+  84:'X',85:'c',86:'C',87:'v',88:'V',89:'b',90:'B',91:'n',92:'N',93:'m',94:'u',95:'U',
 };
 
 function midiNoteToKey(note, transpose) {
   let n = note + transpose;
-  // Транспонируем в диапазон если вышли
   while (n < 36) n += 12;
   while (n > 95) n -= 12;
   return NOTE_MAP[n] || null;
+}
+
+function midiToFreq(note) {
+  return 440 * Math.pow(2, (note - 69) / 12);
 }
 
 // =============================================
@@ -532,277 +206,379 @@ function midiNoteToKey(note, transpose) {
 function parseMidi(buffer) {
   const data = new DataView(buffer);
   let pos = 0;
+  const readU32 = () => { const v = data.getUint32(pos); pos += 4; return v; };
+  const readU16 = () => { const v = data.getUint16(pos); pos += 2; return v; };
+  const readU8  = () => data.getUint8(pos++);
+  const readVar = () => {
+    let r = 0, b;
+    do { b = readU8(); r = (r << 7) | (b & 0x7f); } while (b & 0x80);
+    return r;
+  };
 
-  function readUint32() { const v = data.getUint32(pos); pos += 4; return v; }
-  function readUint16() { const v = data.getUint16(pos); pos += 2; return v; }
-  function readUint8()  { return data.getUint8(pos++); }
-
-  function readVarLen() {
-    let result = 0, b;
-    do { b = readUint8(); result = (result << 7) | (b & 0x7f); } while (b & 0x80);
-    return result;
-  }
-
-  // Заголовок
-  if (readUint32() !== 0x4D546864) throw new Error('Не MIDI файл');
-  readUint32(); // header length
-  const format = readUint16();
-  const numTracks = readUint16();
-  const ticksPerBeat = readUint16();
-
+  if (readU32() !== 0x4D546864) throw new Error('Не MIDI файл');
+  readU32();
+  const format = readU16(), numTracks = readU16(), tpb = readU16();
   const tracks = [];
 
   for (let t = 0; t < numTracks; t++) {
-    if (readUint32() !== 0x4D54726B) throw new Error('Плохой трек');
-    const trackLen = readUint32();
-    const trackEnd = pos + trackLen;
+    if (readU32() !== 0x4D54726B) throw new Error('Плохой трек');
+    const trackEnd = pos + readU32();
     const events = [];
-    let tick = 0;
-    let lastStatus = 0;
+    let tick = 0, lastStatus = 0;
 
     while (pos < trackEnd) {
-      const delta = readVarLen();
-      tick += delta;
-      let statusByte = readUint8();
+      tick += readVar();
+      let sb = readU8();
+      if (sb & 0x80) lastStatus = sb; else { pos--; sb = lastStatus; }
+      const typ = sb >> 4;
 
-      if (statusByte & 0x80) {
-        lastStatus = statusByte;
-      } else {
-        pos--;
-        statusByte = lastStatus;
-      }
-
-      const type = statusByte >> 4;
-      const ch = statusByte & 0x0f;
-
-      if (type === 0x9) {
-        const note = readUint8();
-        const vel = readUint8();
-        events.push({ tick, type: vel > 0 ? 'noteOn' : 'noteOff', note, vel });
-      } else if (type === 0x8) {
-        const note = readUint8();
-        readUint8();
-        events.push({ tick, type: 'noteOff', note });
-      } else if (type === 0xa) { readUint8(); readUint8(); }
-        else if (type === 0xb) { readUint8(); readUint8(); }
-        else if (type === 0xc) { readUint8(); }
-        else if (type === 0xd) { readUint8(); }
-        else if (type === 0xe) { readUint8(); readUint8(); }
-        else if (statusByte === 0xff) {
-          const metaType = readUint8();
-          const metaLen = readVarLen();
-          if (metaType === 0x51 && metaLen === 3) {
-            const b1 = readUint8(), b2 = readUint8(), b3 = readUint8();
-            events.push({ tick, type: 'tempo', tempo: (b1 << 16) | (b2 << 8) | b3 });
-          } else {
-            pos += metaLen;
-          }
-        } else if (statusByte === 0xf0 || statusByte === 0xf7) {
-          const sysLen = readVarLen();
-          pos += sysLen;
-        } else {
-          // пропускаем
-        }
+      if (typ === 0x9) {
+        const n = readU8(), v = readU8();
+        events.push({ tick, type: v > 0 ? 'noteOn' : 'noteOff', note: n, vel: v });
+      } else if (typ === 0x8) {
+        const n = readU8(); readU8();
+        events.push({ tick, type: 'noteOff', note: n });
+      } else if (typ === 0xb) {
+        const ctrl = readU8(), val = readU8();
+        if (ctrl === 64) events.push({ tick, type: 'sustain', val });
+      } else if (typ === 0xa || typ === 0xe) { readU8(); readU8(); }
+        else if (typ === 0xc || typ === 0xd) { readU8(); }
+        else if (sb === 0xff) {
+          const mt = readU8(), ml = readVar();
+          if (mt === 0x51 && ml === 3) {
+            const b1=readU8(),b2=readU8(),b3=readU8();
+            events.push({ tick, type: 'tempo', tempo: (b1<<16)|(b2<<8)|b3 });
+          } else pos += ml;
+        } else if (sb === 0xf0 || sb === 0xf7) { pos += readVar(); }
     }
     pos = trackEnd;
     tracks.push(events);
   }
-
-  return { format, numTracks, ticksPerBeat, tracks };
+  return { format, numTracks, tpb, tracks };
 }
 
 // =============================================
-//   КОНВЕРТАЦИЯ В НОТЫ
+//   TEMPO MAP
 // =============================================
-function convertToNotes(midi, trackIndex, transpose, speedMul) {
-  let tempo = 500000;
-  const tpb = midi.ticksPerBeat;
-  const HOLD_MS = 80;
+function buildTempoMap(midi) {
+  const all = [];
+  for (const t of midi.tracks) for (const e of t) all.push(e);
+  all.sort((a,b) => a.tick - b.tick);
+  const map = [{ tick: 0, tempo: 500000 }];
+  for (const e of all) if (e.type === 'tempo') map.push({ tick: e.tick, tempo: e.tempo });
+  return map;
+}
 
-  // Строим tempo map для точного перевода ticks -> ms
-  let allEvents = [];
-  for (const track of midi.tracks) {
-    for (const ev of track) allEvents.push(ev);
+function tickToMs(tick, tpb, tempoMap, speedMul) {
+  let ms = 0, lastTick = 0, lastTempo = 500000;
+  for (const tm of tempoMap) {
+    if (tm.tick >= tick) break;
+    const t = Math.min(tm.tick, tick);
+    ms += ((t - lastTick) / tpb) * (lastTempo / 1000);
+    lastTick = tm.tick; lastTempo = tm.tempo;
   }
-  allEvents.sort((a, b) => a.tick - b.tick);
+  ms += ((tick - lastTick) / tpb) * (lastTempo / 1000);
+  return ms / speedMul;
+}
 
-  const tempoMap = [{ tick: 0, tempo: 500000 }];
-  for (const ev of allEvents) {
-    if (ev.type === 'tempo') tempoMap.push({ tick: ev.tick, tempo: ev.tempo });
+function detectBpmFromMap(tempoMap) {
+  if (tempoMap.length < 2) return Math.round(60000000 / tempoMap[0].tempo);
+  // Берём самый частый темп
+  const counts = {};
+  for (const tm of tempoMap) {
+    const bpm = Math.round(60000000 / tm.tempo);
+    counts[bpm] = (counts[bpm] || 0) + 1;
   }
+  return parseInt(Object.entries(counts).sort((a,b) => b[1]-a[1])[0][0]);
+}
 
-  function tickToMs(tick) {
-    let ms = 0, lastTick = 0, lastTempo = 500000;
-    for (const tm of tempoMap) {
-      if (tm.tick >= tick) break;
-      ms += ((Math.min(tm.tick, tick) - lastTick) / tpb) * (lastTempo / 1000);
-      lastTick = tm.tick;
-      lastTempo = tm.tempo;
-    }
-    ms += ((tick - lastTick) / tpb) * (lastTempo / 1000);
-    return ms / speedMul;
-  }
+// =============================================
+//   КОНВЕРТАЦИЯ
+// =============================================
+function convertToNotes(midi, transpose, speedMul, useNoteLengths) {
+  const tempoMap = buildTempoMap(midi);
+  const tpb = midi.tpb;
+  const FIXED_HOLD = 80;
+  const SIMUL_THRESHOLD = 30;
 
-  // Собираем noteOn события с временем в ms
+  const allEvents = [];
+  for (const t of midi.tracks) for (const e of t) allEvents.push(e);
+  allEvents.sort((a,b) => a.tick - b.tick);
+
   const noteOnMap = {};
   const segments = [];
 
   for (const ev of allEvents) {
-    if (ev.type === 'noteOn' && ev.vel > 0) {
+    if (ev.type === 'noteOn') {
       const key = midiNoteToKey(ev.note, transpose);
-      if (key) noteOnMap[ev.note] = { timeMs: tickToMs(ev.tick), key };
-    } else if (ev.type === 'noteOff' || (ev.type === 'noteOn' && ev.vel === 0)) {
+      if (key) noteOnMap[ev.note] = { startMs: tickToMs(ev.tick, tpb, tempoMap, speedMul), key, vel: ev.vel };
+    } else if (ev.type === 'noteOff') {
       if (noteOnMap[ev.note]) {
-        segments.push({ timeMs: noteOnMap[ev.note].timeMs, key: noteOnMap[ev.note].key });
+        const endMs = tickToMs(ev.tick, tpb, tempoMap, speedMul);
+        const d = noteOnMap[ev.note];
+        segments.push({
+          startMs: d.startMs,
+          endMs,
+          key: d.key,
+          vel: d.vel,
+          holdMs: useNoteLengths ? Math.max(10, Math.round(endMs - d.startMs)) : FIXED_HOLD
+        });
         delete noteOnMap[ev.note];
       }
     }
   }
-  for (const [, data] of Object.entries(noteOnMap)) {
-    segments.push({ timeMs: data.timeMs, key: data.key });
+  for (const [, d] of Object.entries(noteOnMap)) {
+    segments.push({ startMs: d.startMs, endMs: d.startMs + FIXED_HOLD, key: d.key, vel: d.vel, holdMs: FIXED_HOLD });
   }
 
-  segments.sort((a, b) => a.timeMs - b.timeMs);
+  segments.sort((a,b) => a.startMs - b.startMs);
 
-  // Конвертируем в новый формат [key, hold_ms, pause_ms]
-  // Если две ноты звучат одновременно (разница < 30ms) -> pause = 0
-  const SIMULTANEOUS_THRESHOLD = 30; // ms
   const notes = [];
   for (let i = 0; i < segments.length; i++) {
     const cur = segments[i];
-    const next = segments[i + 1];
+    const nxt = segments[i+1];
     let pauseMs = 0;
-    if (next) {
-      const diff = next.timeMs - cur.timeMs;
-      if (diff < SIMULTANEOUS_THRESHOLD) {
-        pauseMs = 0; // одновременное нажатие
-      } else {
-        pauseMs = Math.max(0, Math.round((diff - HOLD_MS) / 10) * 10);
-      }
+    if (nxt) {
+      const diff = nxt.startMs - cur.startMs;
+      pauseMs = diff < SIMUL_THRESHOLD ? 0 : Math.max(0, Math.round(diff - cur.holdMs));
     }
-    notes.push([cur.key, HOLD_MS, pauseMs]);
+    notes.push({ key: cur.key, hold: cur.holdMs, pause: pauseMs, vel: cur.vel });
   }
-
   return notes;
 }
 
 // =============================================
-//   ГЕНЕРАЦИЯ LUA КОДА (новый формат)
+//   ГЕНЕРАЦИЯ LUA
 // =============================================
 function generateLua(notes, name, author) {
-  const safeStr = s => s.replace(/"/g, '\\"');
-  // Собираем ноты в одну строку: key,hold,pause|key,hold,pause|...
-  const noteStr = notes.map(([key, hold, pause]) => `${key},${hold},${pause}`).join('|');
-  const lines = [];
-  lines.push(`-- Вставь этот блок в таблицу Songs в DarkDevHub_v4.lua`);
-  lines.push(`{`);
-  lines.push(`    name = "${safeStr(name || 'My Song')}",`);
-  lines.push(`    author = "${safeStr(author || 'Unknown')}",`);
-  lines.push(`    icon = "rbxassetid://0",`);
-  lines.push(`    notes = "${noteStr}"`);
-  lines.push(`},`);
-  return lines.join('\n');
+  const safe = s => s.replace(/"/g, '\\"');
+  const noteStr = notes.map(n => `${n.key},${n.hold},${n.pause}`).join('|');
+  return [
+    `-- Вставь этот блок в таблицу Songs в DarkDevHub_v4.lua`,
+    `{`,
+    `    name = "${safe(name || 'My Song')}",`,
+    `    author = "${safe(author || 'Unknown')}",`,
+    `    icon = "rbxassetid://0",`,
+    `    notes = "${noteStr}"`,
+    `},`
+  ].join('\n');
 }
 
 // =============================================
-//   UI ЛОГИКА
+//   ПРОСЛУШИВАНИЕ
 // =============================================
-let midiData = null;
+let audioCtx = null;
+let playbackNodes = [];
+let isPlaying = false;
+let animFrame = null;
+let playbackStart = 0;
+let playbackDuration = 0;
+
+function ensureAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function stopPlayback() {
+  isPlaying = false;
+  for (const n of playbackNodes) { try { n.stop(); } catch(e){} }
+  playbackNodes = [];
+  if (animFrame) cancelAnimationFrame(animFrame);
+  playBtn.textContent = '▶ Play';
+  playBtn.classList.remove('stop');
+}
+
+function buildPlaybackEvents(midi, transpose, speedMul) {
+  const tempoMap = buildTempoMap(midi);
+  const tpb = midi.tpb;
+  const allEvents = [];
+  for (const t of midi.tracks) for (const e of t) allEvents.push(e);
+  allEvents.sort((a,b) => a.tick - b.tick);
+  const noteOnMap = {};
+  const events = [];
+  for (const ev of allEvents) {
+    if (ev.type === 'noteOn' && ev.vel > 0) {
+      noteOnMap[ev.note] = { startMs: tickToMs(ev.tick, tpb, tempoMap, speedMul), vel: ev.vel };
+    } else if (ev.type === 'noteOff' || (ev.type === 'noteOn' && ev.vel === 0)) {
+      if (noteOnMap[ev.note]) {
+        const endMs = tickToMs(ev.tick, tpb, tempoMap, speedMul);
+        const freq = midiToFreq(ev.note + transpose);
+        if (freq > 20 && freq < 20000) {
+          events.push({ startSec: noteOnMap[ev.note].startMs/1000, durSec: Math.max(0.05,(endMs - noteOnMap[ev.note].startMs)/1000), freq, vel: noteOnMap[ev.note].vel });
+        }
+        delete noteOnMap[ev.note];
+      }
+    }
+  }
+  events.sort((a,b) => a.startSec - b.startSec);
+  return events;
+}
+
+function startPlayback(events) {
+  ensureAudioCtx();
+  stopPlayback();
+  if (!events.length) return;
+  isPlaying = true;
+  playBtn.textContent = '■ Stop';
+  playBtn.classList.add('stop');
+  playbackStart = audioCtx.currentTime + 0.05;
+  playbackDuration = events[events.length-1].startSec + events[events.length-1].durSec + 0.5;
+
+  for (const ev of events) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const filt = audioCtx.createBiquadFilter();
+    osc.type = 'triangle';
+    osc.frequency.value = ev.freq;
+    filt.type = 'lowpass';
+    filt.frequency.value = 4000;
+    const vol = (ev.vel / 127) * 0.15;
+    const t0 = playbackStart + ev.startSec;
+    const dur = Math.min(ev.durSec, 2.0);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(vol, t0 + 0.008);
+    gain.gain.exponentialRampToValueAtTime(vol * 0.3, t0 + dur * 0.4);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(filt); filt.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.05);
+    playbackNodes.push(osc);
+  }
+
+  const tick = () => {
+    if (!isPlaying) return;
+    const elapsed = audioCtx.currentTime - playbackStart;
+    const prog = Math.min(elapsed / playbackDuration, 1);
+    previewFill.style.width = (prog * 100) + '%';
+    const s = Math.floor(elapsed);
+    previewTime.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+    if (prog >= 1) { stopPlayback(); previewFill.style.width='0%'; previewTime.textContent='0:00'; return; }
+    animFrame = requestAnimationFrame(tick);
+  };
+  animFrame = requestAnimationFrame(tick);
+}
+
+// =============================================
+//   UI
+// =============================================
 let parsedMidi = null;
 
-const fileInput = document.getElementById('fileInput');
-const dropZone = document.getElementById('dropZone');
-const fileLoaded = document.getElementById('fileLoaded');
-const convertBtn = document.getElementById('convertBtn');
-const resultPanel = document.getElementById('resultPanel');
-const codeOutput = document.getElementById('codeOutput');
-const copyBtn = document.getElementById('copyBtn');
-const status = document.getElementById('status');
-const resultStats = document.getElementById('resultStats');
-
+const fileInput    = document.getElementById('fileInput');
+const dropZone     = document.getElementById('dropZone');
+const fileLoaded   = document.getElementById('fileLoaded');
+const convertBtn   = document.getElementById('convertBtn');
+const resultPanel  = document.getElementById('resultPanel');
+const codeOutput   = document.getElementById('codeOutput');
+const copyBtn      = document.getElementById('copyBtn');
+const statusEl     = document.getElementById('status');
+const resultStats  = document.getElementById('resultStats');
+const previewPanel = document.getElementById('previewPanel');
+const playBtn      = document.getElementById('playBtn');
+const previewFill  = document.getElementById('previewFill');
+const previewTime  = document.getElementById('previewTime');
 const transposeSlider = document.getElementById('transpose');
 const transposeVal = document.getElementById('transposeVal');
-const speedSlider = document.getElementById('speed');
-const speedVal = document.getElementById('speedVal');
+const speedSlider  = document.getElementById('speed');
+const speedVal     = document.getElementById('speedVal');
+const bpmInput     = document.getElementById('bpmInput');
+const bpmDetected  = document.getElementById('bpmDetected');
+const useNoteLengthsCb = document.getElementById('useNoteLengths');
+const detectBpmCb  = document.getElementById('detectBpm');
 
-transposeSlider.addEventListener('input', () => {
-  transposeVal.textContent = transposeSlider.value;
+transposeSlider.addEventListener('input', () => transposeVal.textContent = transposeSlider.value);
+speedSlider.addEventListener('input', () => speedVal.textContent = parseFloat(speedSlider.value).toFixed(2) + 'x');
+
+// Подсветка чекбоксов
+document.querySelectorAll('.check-item').forEach(el => {
+  const cb = el.querySelector('input[type=checkbox]');
+  const update = () => el.classList.toggle('active', cb.checked);
+  cb.addEventListener('change', update);
+  update();
 });
-speedSlider.addEventListener('input', () => {
-  speedVal.textContent = parseFloat(speedSlider.value).toFixed(2) + 'x';
+
+detectBpmCb.addEventListener('change', () => {
+  bpmInput.disabled = detectBpmCb.checked;
+  if (detectBpmCb.checked && parsedMidi) {
+    const map = buildTempoMap(parsedMidi);
+    const bpm = detectBpmFromMap(map);
+    bpmDetected.textContent = `→ ${bpm} BPM`;
+  }
 });
 
 function showStatus(msg, type) {
-  status.textContent = msg;
-  status.className = 'status ' + type;
-  status.style.display = 'block';
+  statusEl.textContent = msg;
+  statusEl.className = 'status ' + type;
+  statusEl.style.display = 'block';
 }
 
 function loadFile(file) {
   if (!file || !file.name.match(/\.midi?$/i)) {
-    showStatus('Ошибка: нужен файл .mid или .midi', 'err');
+    showStatus('Ошибка: нужен .mid или .midi файл', 'err');
     return;
   }
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      midiData = e.target.result;
-      parsedMidi = parseMidi(midiData);
-
-      fileLoaded.textContent = `✓ ${file.name} загружен · ${parsedMidi.numTracks} треков`;
+      parsedMidi = parseMidi(e.target.result);
+      fileLoaded.textContent = `✓ ${file.name} · ${parsedMidi.numTracks} треков`;
       convertBtn.disabled = false;
       previewPanel.style.display = 'block';
-      showStatus(`MIDI загружен: формат ${parsedMidi.format}, ${parsedMidi.numTracks} треков, ${parsedMidi.ticksPerBeat} ticks/beat`, 'ok');
-    } catch (err) {
-      showStatus('Ошибка парсинга: ' + err.message, 'err');
+
+      // Detect BPM
+      if (detectBpmCb.checked) {
+        const map = buildTempoMap(parsedMidi);
+        const bpm = detectBpmFromMap(map);
+        bpmDetected.textContent = `→ ${bpm} BPM`;
+      }
+
+      showStatus(`MIDI загружен · ${parsedMidi.numTracks} треков · ${parsedMidi.tpb} ticks/beat`, 'ok');
+    } catch(err) {
+      showStatus('Ошибка: ' + err.message, 'err');
     }
   };
   reader.readAsArrayBuffer(file);
 }
 
 fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
-
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('dragover');
-  loadFile(e.dataTransfer.files[0]);
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); loadFile(e.dataTransfer.files[0]); });
+
+// Play button — инициализируем AudioContext сразу при клике (решает блокировку браузера)
+playBtn.addEventListener('click', () => {
+  if (isPlaying) { stopPlayback(); return; }
+  if (!parsedMidi) return;
+  ensureAudioCtx();
+  const transpose = parseInt(transposeSlider.value);
+  const speed = parseFloat(speedSlider.value);
+  const events = buildPlaybackEvents(parsedMidi, transpose, speed);
+  startPlayback(events);
 });
 
 convertBtn.addEventListener('click', () => {
   if (!parsedMidi) return;
-
   try {
-    const trackIndex = -1;
     const transpose = parseInt(transposeSlider.value);
     const speed = parseFloat(speedSlider.value);
+    const useNL = useNoteLengthsCb.checked;
     const name = document.getElementById('songName').value || 'My Song';
     const author = document.getElementById('songAuthor').value || 'Unknown';
 
     showStatus('Конвертирую...', 'info');
+    const notes = convertToNotes(parsedMidi, transpose, speed, useNL);
 
-    const notes = convertToNotes(parsedMidi, trackIndex, transpose, speed);
-
-    if (notes.length === 0) {
-      showStatus('Ноты не найдены. Попробуй другой трек или транспонирование.', 'err');
-      return;
-    }
+    if (!notes.length) { showStatus('Ноты не найдены. Попробуй изменить транспонирование.', 'err'); return; }
 
     const lua = generateLua(notes, name, author);
     codeOutput.textContent = lua;
 
-    // Считаем время
-    const totalSec = notes.reduce((s, n) => s + (n[1] + n[2]) / 1000, 0);
-    const mins = Math.floor(totalSec / 60);
-    const secs = Math.floor(totalSec % 60);
+    const totalSec = notes.reduce((s,n) => s + (n.hold + n.pause) / 1000, 0);
+    const mins = Math.floor(totalSec/60), secs = Math.floor(totalSec%60);
     resultStats.innerHTML = `Нот: <span>${notes.length}</span> · Длина: <span>${mins}:${String(secs).padStart(2,'0')}</span>`;
-
     resultPanel.style.display = 'block';
     resultPanel.scrollIntoView({ behavior: 'smooth' });
-    showStatus(`Готово! ${notes.length} нот сконвертировано.`, 'ok');
-  } catch (err) {
-    showStatus('Ошибка конвертации: ' + err.message, 'err');
+    showStatus(`Готово! ${notes.length} нот конвертировано.`, 'ok');
+  } catch(err) {
+    showStatus('Ошибка: ' + err.message, 'err');
   }
 });
 
@@ -810,185 +586,8 @@ copyBtn.addEventListener('click', () => {
   navigator.clipboard.writeText(codeOutput.textContent).then(() => {
     copyBtn.textContent = 'Скопировано!';
     copyBtn.classList.add('copied');
-    setTimeout(() => {
-      copyBtn.textContent = 'Копировать';
-      copyBtn.classList.remove('copied');
-    }, 2000);
+    setTimeout(() => { copyBtn.textContent = 'Копировать'; copyBtn.classList.remove('copied'); }, 2000);
   });
-});
-
-// =============================================
-//   ПРОСЛУШИВАНИЕ через Web Audio API
-// =============================================
-
-// MIDI нота → частота Hz
-function midiToFreq(note) {
-  return 440 * Math.pow(2, (note - 69) / 12);
-}
-
-// Собираем сырые MIDI события для воспроизведения (с реальными частотами)
-function buildPlaybackEvents(midi, transpose, speedMul) {
-  let tempo = 500000;
-  const tpb = midi.ticksPerBeat;
-
-  function ticksToSec(ticks) {
-    return (ticks / tpb) * (tempo / 1000000) / speedMul;
-  }
-
-  let allEvents = [];
-  for (const track of midi.tracks) {
-    for (const ev of track) allEvents.push(ev);
-  }
-  allEvents.sort((a, b) => a.tick - b.tick);
-
-  // Первый проход — собираем tempo map
-  const tempoMap = [];
-  let curTempo = 500000;
-  for (const ev of allEvents) {
-    if (ev.type === 'tempo') {
-      tempoMap.push({ tick: ev.tick, tempo: ev.tempo });
-      curTempo = ev.tempo;
-    }
-  }
-
-  function tickToAbsSec(tick) {
-    let sec = 0;
-    let lastTick = 0;
-    let lastTempo = 500000;
-    for (const tm of tempoMap) {
-      if (tm.tick >= tick) break;
-      sec += ((Math.min(tm.tick, tick) - lastTick) / tpb) * (lastTempo / 1000000);
-      lastTick = tm.tick;
-      lastTempo = tm.tempo;
-    }
-    sec += ((tick - lastTick) / tpb) * (lastTempo / 1000000);
-    return sec / speedMul;
-  }
-
-  const events = [];
-  const noteOnMap = {};
-
-  for (const ev of allEvents) {
-    if (ev.type === 'noteOn' && ev.vel > 0) {
-      noteOnMap[ev.note] = { tick: ev.tick, vel: ev.vel };
-    } else if (ev.type === 'noteOff' || (ev.type === 'noteOn' && ev.vel === 0)) {
-      if (noteOnMap[ev.note]) {
-        const start = tickToAbsSec(noteOnMap[ev.note].tick);
-        const end = tickToAbsSec(ev.tick);
-        const freq = midiToFreq(ev.note + transpose);
-        if (freq > 20 && freq < 20000 && end > start) {
-          events.push({ start, end, freq, vel: noteOnMap[ev.note].vel });
-        }
-        delete noteOnMap[ev.note];
-      }
-    }
-  }
-
-  // Незакрытые ноты
-  for (const [note, data] of Object.entries(noteOnMap)) {
-    const start = tickToAbsSec(data.tick);
-    const freq = midiToFreq(parseInt(note) + transpose);
-    events.push({ start, end: start + 0.3, freq, vel: data.vel });
-  }
-
-  events.sort((a, b) => a.start - b.start);
-  return events;
-}
-
-let audioCtx = null;
-let isPlaying = false;
-let playbackNodes = [];
-let playbackStart = 0;
-let playbackDuration = 0;
-let animFrame = null;
-let previewEvents = [];
-
-const previewPanel = document.getElementById('previewPanel');
-const playBtn = document.getElementById('playBtn');
-const previewFill = document.getElementById('previewFill');
-const previewTime = document.getElementById('previewTime');
-
-function stopPlayback() {
-  isPlaying = false;
-  for (const n of playbackNodes) {
-    try { n.stop(); } catch(e) {}
-  }
-  playbackNodes = [];
-  if (animFrame) cancelAnimationFrame(animFrame);
-  playBtn.textContent = '▶ Play';
-  playBtn.style.background = 'var(--accent)';
-}
-
-function updateProgress() {
-  if (!isPlaying) return;
-  const elapsed = audioCtx.currentTime - playbackStart;
-  const progress = Math.min(elapsed / playbackDuration, 1);
-  previewFill.style.width = (progress * 100) + '%';
-  const secs = Math.floor(elapsed);
-  previewTime.textContent = Math.floor(secs/60) + ':' + String(secs%60).padStart(2,'0');
-  if (progress >= 1) {
-    stopPlayback();
-    previewFill.style.width = '0%';
-    previewTime.textContent = '0:00';
-    return;
-  }
-  animFrame = requestAnimationFrame(updateProgress);
-}
-
-function startPlayback() {
-  if (!previewEvents.length) return;
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-
-  stopPlayback();
-  isPlaying = true;
-  playBtn.textContent = '■ Stop';
-  playBtn.style.background = 'var(--red)';
-
-  playbackStart = audioCtx.currentTime + 0.05;
-  playbackDuration = previewEvents[previewEvents.length - 1].end + 0.5;
-
-  for (const ev of previewEvents) {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    const filter = audioCtx.createBiquadFilter();
-
-    osc.type = 'triangle';
-    osc.frequency.value = ev.freq;
-
-    filter.type = 'lowpass';
-    filter.frequency.value = 3000;
-
-    const vol = (ev.vel / 127) * 0.18;
-    const start = playbackStart + ev.start;
-    const dur = Math.min(ev.end - ev.start, 2.0);
-
-    gain.gain.setValueAtTime(0, start);
-    gain.gain.linearRampToValueAtTime(vol, start + 0.01);
-    gain.gain.exponentialRampToValueAtTime(vol * 0.4, start + dur * 0.3);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc.start(start);
-    osc.stop(start + dur + 0.05);
-    playbackNodes.push(osc);
-  }
-
-  animFrame = requestAnimationFrame(updateProgress);
-}
-
-playBtn.addEventListener('click', () => {
-  if (isPlaying) {
-    stopPlayback();
-  } else {
-    const transpose = parseInt(transposeSlider.value);
-    const speed = parseFloat(speedSlider.value);
-    previewEvents = buildPlaybackEvents(parsedMidi, transpose, speed);
-    startPlayback();
-  }
 });
 </script>
 </body>
