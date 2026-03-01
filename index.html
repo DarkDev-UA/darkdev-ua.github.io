@@ -40,7 +40,6 @@
   .range-wrap input[type=range] { flex: 1; height: 4px; accent-color: var(--accent2); cursor: pointer; }
   .range-val { font-family: var(--mono); font-size: 0.85rem; color: var(--accent2); min-width: 40px; text-align: right; }
   .bpm-tag { font-family: var(--mono); font-size: 0.75rem; color: var(--accent2); margin-left: 6px; }
-  /* Чекбоксы */
   .checks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .check-item { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 10px 12px; border: 2px solid var(--border); background: var(--bg); transition: border-color 0.15s; user-select: none; -webkit-tap-highlight-color: transparent; }
   .check-item:hover { border-color: var(--accent2); }
@@ -48,12 +47,10 @@
   .check-item input[type=checkbox] { accent-color: var(--accent2); width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; margin-top: 2px; }
   .check-item .chk-label { font-family: var(--mono); font-size: 0.78rem; color: var(--text); display: block; }
   .check-item small { display: block; font-family: var(--mono); font-size: 0.63rem; color: var(--dim); margin-top: 3px; line-height: 1.3; }
-  /* Кнопки */
   .btn-convert { width: 100%; padding: 16px; background: var(--accent); border: 2px solid var(--accent2); color: var(--white); font-family: var(--head); font-size: 1.1rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; margin-bottom: 16px; -webkit-tap-highlight-color: transparent; outline: none; }
   .btn-convert:hover { background: var(--accent2); box-shadow: 0 0 20px rgba(41,128,255,0.4); }
   .btn-convert:active { opacity: 0.85; }
   .btn-convert:disabled { background: #111827; border-color: var(--border); color: var(--dim); cursor: not-allowed; }
-  /* Прослушивание */
   .preview-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
   .btn-play { padding: 10px 20px; background: var(--accent); border: 2px solid var(--accent2); color: var(--white); font-family: var(--head); font-size: 1rem; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all 0.15s; white-space: nowrap; outline: none; -webkit-tap-highlight-color: transparent; }
   .btn-play:hover { background: var(--accent2); }
@@ -62,7 +59,6 @@
   .progress-bar { flex: 1; background: var(--bg); border: 2px solid var(--border); height: 12px; position: relative; }
   .progress-fill { height: 100%; background: var(--accent2); width: 0%; transition: width 0.1s; }
   .time-label { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); min-width: 50px; text-align: right; }
-  /* Результат */
   .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
   .result-stats { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); }
   .result-stats span { color: var(--accent2); }
@@ -80,42 +76,40 @@
 <div class="container">
   <header>
     <h1>Dark<span>Dev</span> | MIDI Converter</h1>
-    <p>// MIDI → LUA · VIRTUAL PIANO ROBLOX</p>
+    <p>// MIDI → LUA · AUTO PIANO ROBLOX</p>
   </header>
-
-  <!-- 01 Загрузка -->
+  
   <div class="panel">
-    <div class="panel-title">01 // загрузка файла</div>
+    <div class="panel-title">1 // File drop</div>
     <div class="drop-zone" id="dropZone">
       <input type="file" id="fileInput" accept=".mid,.midi">
       <span class="drop-icon">🎵</span>
-      <h3>Перетащи MIDI файл сюда</h3>
-      <p>или нажми чтобы выбрать (.mid / .midi)</p>
+      <h3>Drag and drop MIDI file here</h3>
+      <p>or click to select (.mid / .midi)</p>
       <div class="file-loaded" id="fileLoaded"></div>
     </div>
   </div>
-
-  <!-- 02 Настройки -->
+  
   <div class="panel">
-    <div class="panel-title">02 // настройки</div>
+    <div class="panel-title">2 // Settings</div>
     <div class="settings-grid">
       <div class="setting-item">
-        <label>Название песни</label>
+        <label>Song title</label>
         <input type="text" id="songName" placeholder="My Song">
       </div>
       <div class="setting-item">
-        <label>Автор</label>
+        <label>Author</label>
         <input type="text" id="songAuthor" placeholder="Unknown">
       </div>
       <div class="setting-item">
-        <label>Транспонирование (полутонов)</label>
+        <label>Transposition</label>
         <div class="range-wrap">
           <input type="range" id="transpose" min="-12" max="12" value="0">
           <span class="range-val" id="transposeVal">0</span>
         </div>
       </div>
       <div class="setting-item">
-        <label>Скорость (x)</label>
+        <label>Speed (x)</label>
         <div class="range-wrap">
           <input type="range" id="speed" min="0.25" max="3" step="0.05" value="1">
           <span class="range-val" id="speedVal">1.00x</span>
@@ -123,32 +117,30 @@
       </div>
       <div class="setting-item">
         <label>BPM <span class="bpm-tag" id="bpmTag"></span></label>
-        <input type="number" id="bpmInput" placeholder="авто (из MIDI)" min="20" max="300" style="width:100%">
+        <input type="number" id="bpmInput" placeholder="Auto (from MIDI)" min="20" max="300" style="width:100%">
       </div>
     </div>
-
-    <!-- Опции -->
+    
     <div class="checks-grid">
       <label class="check-item">
         <input type="checkbox" id="useNoteLengths" checked>
         <div>
-          <span class="chk-label">Длина нот из MIDI</span>
-          <small>Hold = реальная длина ноты из файла</small>
+          <span class="chk-label">Length of MIDI notes</span>
+          <small>Hold — actual note length from file</small>
         </div>
       </label>
       <label class="check-item">
         <input type="checkbox" id="useSustain">
         <div>
-          <span class="chk-label">Sustain педаль</span>
-          <small>Пробел — ноты резонируют дольше</small>
+          <span class="chk-label">Sustain pedal</span>
+          <small>Spacebar — notes resonate longer</small>
         </div>
       </label>
     </div>
   </div>
-
-  <!-- Прослушивание -->
+  
   <div class="panel" id="previewPanel" style="display:none;">
-    <div class="panel-title">02.5 // прослушивание</div>
+    <div class="panel-title">2.5 // Listening</div>
     <div class="preview-row">
       <button class="btn-play" id="playBtn">▶ Play</button>
       <div class="progress-bar">
@@ -156,23 +148,20 @@
       </div>
       <span class="time-label" id="previewTime">0:00</span>
     </div>
-    <div style="font-family:var(--mono);font-size:0.72rem;color:var(--dim);">Синтезированный звук — для проверки мелодии перед конвертацией</div>
+    <div style="font-family:var(--mono);font-size:0.72rem;color:var(--dim);">Synthesized sound — to test the melody before converting</div>
   </div>
-
-  <!-- Кнопка конвертации -->
-  <button class="btn-convert" id="convertBtn" disabled>⚡ Конвертировать в Lua</button>
-
-  <!-- Статус -->
+  
+  <button class="btn-convert" id="convertBtn" disabled>⚡ Convert to Lua ⚡</button>
+  
   <div class="status" id="status"></div>
-
-  <!-- Результат -->
+  
   <div class="panel" id="resultPanel" style="display:none;">
-    <div class="panel-title">03 // результат</div>
+    <div class="panel-title">3 // Result</div>
     <div class="result-header">
       <div class="result-stats" id="resultStats"></div>
       <div style="display:flex;gap:8px;">
-        <button class="btn-copy" id="copyBtn">Копировать</button>
-        <button class="btn-copy" id="downloadBtn">Скачать .lua</button>
+        <button class="btn-copy" id="copyBtn">Copy</button>
+        <button class="btn-copy" id="downloadBtn">Download</button>
       </div>
     </div>
     <div class="code-output" id="codeOutput"></div>
@@ -181,15 +170,12 @@
 
 <footer style="position:relative;z-index:1;text-align:center;padding:20px 0 40px;border-top:1px solid var(--border);margin-top:10px;">
   <p style="font-family:var(--mono);font-size:0.7rem;color:var(--dim);letter-spacing:2px;">
-    © 2026 DarkDev | MIDI Converter · Все права защищены<br>
-    <span style="color:var(--border);">Сделано для Virtual Piano · Roblox</span>
+    © 2026 DarkDev | MIDI · All rights reserved<br>
+    <span style="color:var(--border);">Auto Piano · Roblox</span>
   </p>
 </footer>
 
 <script>
-// =============================================
-//   РАСКЛАДКА НОТ
-// =============================================
 const NOTE_MAP = {
   36:'1',37:'2',38:'3',39:'5',40:'4',41:'6',42:'7',43:'8',44:'!',45:'9',46:'@',47:'0',
   48:'q',49:'Q',50:'w',51:'W',52:'e',53:'E',54:'r',55:'T',56:'t',57:'Y',58:'y',59:'u',
@@ -209,9 +195,6 @@ function midiToFreq(note) {
   return 440 * Math.pow(2, (note - 69) / 12);
 }
 
-// =============================================
-//   ПАРСЕР MIDI
-// =============================================
 function parseMidi(buffer) {
   const data = new DataView(buffer);
   let pos = 0;
@@ -224,7 +207,7 @@ function parseMidi(buffer) {
     return r;
   };
 
-  if (readU32() !== 0x4D546864) throw new Error('Не MIDI файл');
+  if (readU32() !== 0x4D546864) throw new Error('Not a MIDI file');
   readU32();
   const format = readU16(), numTracks = readU16(), tpb = readU16();
   const tracks = [];
@@ -276,9 +259,6 @@ function parseMidi(buffer) {
   return { format, numTracks, tpb, tracks };
 }
 
-// =============================================
-//   TEMPO MAP
-// =============================================
 function buildTempoMap(midi) {
   const all = [];
   for (const t of midi.tracks) for (const e of t) all.push(e);
@@ -299,7 +279,6 @@ function tickToMs(tick, tpb, tempoMap, speedMul) {
   return ms / speedMul;
 }
 
-// Берём первый реальный темп из MIDI (самый точный метод)
 function detectBpm(midi) {
   const all = [];
   for (const t of midi.tracks) for (const e of t) all.push(e);
@@ -310,9 +289,6 @@ function detectBpm(midi) {
   return 120;
 }
 
-// =============================================
-//   КОНВЕРТАЦИЯ
-// =============================================
 function convertToNotes(midi, transpose, speedMul, useNoteLengths, useSustain) {
   const tempoMap = buildTempoMap(midi);
   const tpb = midi.tpb;
@@ -323,7 +299,6 @@ function convertToNotes(midi, transpose, speedMul, useNoteLengths, useSustain) {
   for (const t of midi.tracks) for (const e of t) allEvents.push(e);
   allEvents.sort((a,b) => a.tick - b.tick);
 
-  // Sustain state
   let sustainOn = false;
   const sustainedNotes = new Set();
 
@@ -343,11 +318,10 @@ function convertToNotes(midi, transpose, speedMul, useNoteLengths, useSustain) {
       if (noteOnMap[ev.note]) {
         const d = noteOnMap[ev.note];
         const endMs = tickToMs(ev.tick, tpb, tempoMap, speedMul);
-        // Если sustain включён — продлеваем ноту
         let actualEnd = endMs;
         if (useSustain && sustainOn) {
           sustainedNotes.add(ev.note);
-          actualEnd = endMs + 500; // резонанс +500мс
+          actualEnd = endMs + 500;
         }
         const holdMs = useNoteLengths
           ? Math.max(10, Math.round(actualEnd - d.startMs))
@@ -376,14 +350,10 @@ function convertToNotes(midi, transpose, speedMul, useNoteLengths, useSustain) {
   return notes;
 }
 
-// =============================================
-//   ГЕНЕРАЦИЯ LUA
-// =============================================
 function generateLua(notes, name, author) {
   const safe = s => s.replace(/"/g, '\\"');
   const noteStr = notes.map(n => `${n.key},${n.hold},${n.pause}`).join('|');
   return [
-    `-- Вставь этот блок в таблицу Songs в DarkDevHub_v4.lua`,
     `{`,
     `    name = "${safe(name || 'My Song')}",`,
     `    author = "${safe(author || 'Unknown')}",`,
@@ -393,9 +363,6 @@ function generateLua(notes, name, author) {
   ].join('\n');
 }
 
-// =============================================
-//   ПРОСЛУШИВАНИЕ
-// =============================================
 let audioCtx = null, playbackNodes = [], isPlaying = false;
 let animFrame = null, playbackStart = 0, playbackDuration = 0;
 
@@ -408,7 +375,7 @@ function stopPlayback() {
   isPlaying = false;
   for (const n of playbackNodes) { try { n.stop(); } catch(e){} }
   playbackNodes = [];
-  reverbNode = null; // пересоздаём реверб при следующем Play
+  reverbNode = null;
   if (animFrame) cancelAnimationFrame(animFrame);
   playBtn.textContent = '▶ Play';
   playBtn.classList.remove('stop');
@@ -439,12 +406,11 @@ function buildPlaybackEvents(midi, transpose, speedMul) {
   return events;
 }
 
-// Реверб — создаём один раз
 let reverbNode = null;
 function getReverb() {
   if (reverbNode) return reverbNode;
   const sampleRate = audioCtx.sampleRate;
-  const length = sampleRate * 2.5; // 2.5 сек реверб
+  const length = sampleRate * 2.5;
   const impulse = audioCtx.createBuffer(2, length, sampleRate);
   for (let ch = 0; ch < 2; ch++) {
     const d = impulse.getChannelData(ch);
@@ -476,15 +442,14 @@ function playNote(freq, vel, durSec) {
   gain.gain.linearRampToValueAtTime(vol, now + 0.012);
   gain.gain.exponentialRampToValueAtTime(vol * 0.35, now + dur * 0.5);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-
-  // Реверб — тихий, 25% от громкости
+  
   reverbGain.gain.value = 0.25;
 
   osc.connect(filt);
   filt.connect(gain);
-  gain.connect(audioCtx.destination); // прямой звук
+  gain.connect(audioCtx.destination);
   gain.connect(reverbGain);
-  reverbGain.connect(getReverb()); // эхо
+  reverbGain.connect(getReverb());
 
   osc.start(now); osc.stop(now + dur + 0.05);
   playbackNodes.push(osc);
@@ -505,14 +470,12 @@ function startPlayback(events) {
   const scheduleNext = () => {
     if (!isPlaying) return;
     const elapsed = (Date.now() - playbackStart) / 1000;
-    // Играем все ноты которые уже должны были звучать
     while (idx < events.length && events[idx].startSec <= elapsed + 0.1) {
       const ev = events[idx];
       playNote(ev.freq, ev.vel, ev.durSec);
       idx++;
     }
     if (idx >= events.length) {
-      // Всё сыграли — ждём конца последней ноты
       setTimeout(() => {
         stopPlayback();
         previewFill.style.width = '0%';
@@ -523,7 +486,6 @@ function startPlayback(events) {
     animFrame = requestAnimationFrame(scheduleNext);
   };
 
-  // Прогресс бар отдельно
   const updateBar = () => {
     if (!isPlaying) return;
     const elapsed = (Date.now() - playbackStart) / 1000;
@@ -538,37 +500,33 @@ function startPlayback(events) {
   requestAnimationFrame(updateBar);
 }
 
-// =============================================
-//   UI
-// =============================================
 let parsedMidi = null;
 
-const fileInput    = document.getElementById('fileInput');
-const dropZone     = document.getElementById('dropZone');
-const fileLoaded   = document.getElementById('fileLoaded');
-const convertBtn   = document.getElementById('convertBtn');
-const resultPanel  = document.getElementById('resultPanel');
-const codeOutput   = document.getElementById('codeOutput');
-const copyBtn      = document.getElementById('copyBtn');
-const statusEl     = document.getElementById('status');
-const resultStats  = document.getElementById('resultStats');
+const fileInput = document.getElementById('fileInput');
+const dropZone = document.getElementById('dropZone');
+const fileLoaded = document.getElementById('fileLoaded');
+const convertBtn = document.getElementById('convertBtn');
+const resultPanel = document.getElementById('resultPanel');
+const codeOutput = document.getElementById('codeOutput');
+const copyBtn = document.getElementById('copyBtn');
+const statusEl = document.getElementById('status');
+const resultStats = document.getElementById('resultStats');
 const previewPanel = document.getElementById('previewPanel');
-const playBtn      = document.getElementById('playBtn');
-const previewFill  = document.getElementById('previewFill');
-const previewTime  = document.getElementById('previewTime');
-const transposeSlider  = document.getElementById('transpose');
-const transposeVal     = document.getElementById('transposeVal');
-const speedSlider      = document.getElementById('speed');
-const speedVal         = document.getElementById('speedVal');
-const bpmInput         = document.getElementById('bpmInput');
-const bpmTag           = document.getElementById('bpmTag');
+const playBtn = document.getElementById('playBtn');
+const previewFill = document.getElementById('previewFill');
+const previewTime = document.getElementById('previewTime');
+const transposeSlider = document.getElementById('transpose');
+const transposeVal = document.getElementById('transposeVal');
+const speedSlider = document.getElementById('speed');
+const speedVal = document.getElementById('speedVal');
+const bpmInput = document.getElementById('bpmInput');
+const bpmTag = document.getElementById('bpmTag');
 const useNoteLengthsCb = document.getElementById('useNoteLengths');
-const useSustainCb     = document.getElementById('useSustain');
+const useSustainCb = document.getElementById('useSustain');
 
 transposeSlider.addEventListener('input', () => transposeVal.textContent = transposeSlider.value);
 speedSlider.addEventListener('input', () => speedVal.textContent = parseFloat(speedSlider.value).toFixed(2) + 'x');
 
-// Подсветка чекбоксов
 document.querySelectorAll('.check-item').forEach(el => {
   const cb = el.querySelector('input[type=checkbox]');
   const update = () => el.classList.toggle('active', cb.checked);
@@ -583,7 +541,6 @@ function showStatus(msg, type) {
 }
 
 function getSpeedMul() {
-  // Если задан BPM вручную — считаем множитель от обнаруженного
   const manualBpm = parseFloat(bpmInput.value);
   const speed = parseFloat(speedSlider.value);
   if (parsedMidi && manualBpm > 0) {
@@ -595,25 +552,24 @@ function getSpeedMul() {
 
 function loadFile(file) {
   if (!file || !file.name.match(/\.midi?$/i)) {
-    showStatus('Ошибка: нужен .mid или .midi файл', 'err');
+    showStatus('Error: A .mid or .midi file is required', 'err');
     return;
   }
   const reader = new FileReader();
   reader.onload = e => {
     try {
       parsedMidi = parseMidi(e.target.result);
-      fileLoaded.textContent = `✓ ${file.name} · ${parsedMidi.numTracks} треков`;
+      fileLoaded.textContent = `✓ ${file.name} · ${parsedMidi.numTracks} tracks`;
       convertBtn.disabled = false;
       previewPanel.style.display = 'block';
 
-      // Показываем BPM
       const bpm = detectBpm(parsedMidi);
       bpmTag.textContent = `→ ${bpm} BPM`;
-      bpmInput.placeholder = `авто (${bpm} BPM)`;
+      bpmInput.placeholder = `Auto (${bpm} BPM)`;
 
-      showStatus(`MIDI загружен · ${parsedMidi.numTracks} треков · ${parsedMidi.tpb} ticks/beat · ${bpm} BPM`, 'ok');
+      showStatus(`MIDI loaded · ${parsedMidi.numTracks} tracks · ${parsedMidi.tpb} ticks/beat · ${bpm} BPM`, 'ok');
     } catch(err) {
-      showStatus('Ошибка: ' + err.message, 'err');
+      showStatus('Error: ' + err.message, 'err');
     }
   };
   reader.readAsArrayBuffer(file);
@@ -642,22 +598,22 @@ convertBtn.addEventListener('click', () => {
     const name = document.getElementById('songName').value || 'My Song';
     const author = document.getElementById('songAuthor').value || 'Unknown';
 
-    showStatus('Конвертирую...', 'info');
+    showStatus('Converting...', 'info');
     const timeStart = performance.now();
     const notes = convertToNotes(parsedMidi, transpose, speedMul, useNL, useSus);
     const timeEnd = performance.now();
 
-    if (!notes.length) { showStatus('Ноты не найдены. Попробуй изменить транспонирование.', 'err'); return; }
+    if (!notes.length) { showStatus('No notes found. Try changing the transposition.', 'err'); return; }
 
     const lua = generateLua(notes, name, author);
     codeOutput.textContent = lua;
 
-    resultStats.innerHTML = `Нот: <span>${notes.length}</span>`;
+    resultStats.innerHTML = `Notes: <span>${notes.length}</span>`;
     resultPanel.style.display = 'block';
     resultPanel.scrollIntoView({ behavior: 'smooth' });
-    showStatus(`Готово! ${notes.length} нот за ${(timeEnd - timeStart).toFixed(1)}мс`, 'ok');
+    showStatus(`Ready! ${notes.length} notes per ${(timeEnd - timeStart).toFixed(1)}ms`, 'ok');
   } catch(err) {
-    showStatus('Ошибка: ' + err.message, 'err');
+    showStatus('Error: ' + err.message, 'err');
   }
 });
 
@@ -675,9 +631,9 @@ document.getElementById('downloadBtn').addEventListener('click', () => {
 
 copyBtn.addEventListener('click', () => {
   navigator.clipboard.writeText(codeOutput.textContent).then(() => {
-    copyBtn.textContent = 'Скопировано!';
+    copyBtn.textContent = 'Copied!';
     copyBtn.classList.add('copied');
-    setTimeout(() => { copyBtn.textContent = 'Копировать'; copyBtn.classList.remove('copied'); }, 2000);
+    setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('Copied'); }, 2000);
   });
 });
 </script>
